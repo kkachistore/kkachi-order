@@ -27,7 +27,7 @@
       <div class="flex items-center gap-2.5">
         <span class="font-extrabold text-lg md:text-xl tracking-tight text-[#191f28]">까치방앗간 <span class="text-[#3182f6] text-sm md:text-base font-semibold">B2B</span></span>
         <button onclick="fetchLatestOrdersFromGoogleSheet(true)" id="sync-status" class="toss-btn text-[11px] bg-slate-100 text-slate-500 hover:bg-slate-200 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-          <svg class="w-3 h-3 text-slate-400 animate-spin-reverse" id="sync-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <svg class="w-3 h-3 text-slate-400" id="sync-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span id="sync-status-text">동기화 확인중</span>
         </button>
       </div>
@@ -73,7 +73,7 @@
           </label>
           <button onclick="resetOrderForm()" class="text-xs text-slate-400 hover:text-slate-600 font-medium py-1 px-2">새 주문 작성 (초기화)</button>
         </div>
-        <textarea id="raw-order-text" rows="8" placeholder="카톡에서 받은 주문 전문을 그대로 붙여넣으세요.&#10;&#10;자유로운 텍스트나 ■라벨 양식 모두 자동으로 분리됩니다.&#10;예:&#10;■상품명 >국산 생강청&#10;■발주수량 : 25개&#10;■수취인(사업장):성남시 분당구 판교로432&#10;제일프라자 111호 달콤한곳간&#10;■연락처 : 010 6365 6680" class="w-full text-xs md:text-sm p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3182f6] leading-relaxed transition resize-y"></textarea>
+        <textarea id="raw-order-text" rows="7" placeholder="카톡에서 받은 주문 전문을 그대로 붙여넣으세요.&#10;&#10;자유로운 텍스트나 ■라벨 양식 모두 자동으로 분리됩니다.&#10;예:&#10;■상품명 >국산 생강청&#10;■발주수량 : 25개&#10;■수취인(사업장):성남시 분당구 판교로432&#10;제일프라자 111호 달콤한곳간&#10;■연락처 : 010 6365 6680" class="w-full text-xs md:text-sm p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3182f6] leading-relaxed transition resize-y"></textarea>
         
         <div class="flex justify-between items-center mt-2.5">
           <span id="order-lock-indicator" class="text-xs text-slate-400 font-medium"></span>
@@ -141,7 +141,7 @@
             </div>
           </div>
 
-          <!-- 3. 품목 및 수량 (드롭다운 터치 즉시 추가 & +/- 버튼 & 소계) -->
+          <!-- 3. 품목 및 수량 (터치 1번에 자동추가 & 자동닫힘) -->
           <div class="toss-card p-4 md:p-5 space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 class="font-bold text-sm text-slate-800">3. 이번 주문 품목</h3>
@@ -150,14 +150,15 @@
             
             <div id="active-product-rows" class="space-y-2"></div>
 
-            <!-- 품목 선택 드롭다운 (선택 즉시 추가) -->
+            <!-- 품목 추가 원클릭 버튼 (팝업 모달 호출) -->
             <div class="pt-1">
-              <select id="add-product-select" onchange="handleSelectProductInstant(this.value)" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 hover:bg-white focus:bg-white outline-none cursor-pointer">
-                <option value="">+ 품목 추가 (터치하여 선택)...</option>
-              </select>
+              <button onclick="openProductSelectModal()" class="w-full toss-btn text-xs py-2.5 border-2 border-dashed border-slate-300 hover:border-[#3182f6] text-slate-600 hover:text-[#3182f6] font-bold rounded-xl flex items-center justify-center gap-1.5 bg-slate-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                + 품목 터치하여 추가 (원클릭 자동 선택)
+              </button>
             </div>
 
-            <!-- 하단 품목 소계 및 배송비 합산 미리보기 -->
+            <!-- 하단 품목 소계 및 배송비 합산 -->
             <div class="border-t border-slate-100 pt-3 flex flex-col gap-1 text-xs text-slate-600">
               <div class="flex justify-between">
                 <span>품목 합계</span>
@@ -175,7 +176,7 @@
         <!-- 우측: 택배비 입력, 금액합계, 카톡 답장, 거래명세표 -->
         <div class="lg:col-span-5 space-y-4">
           
-          <!-- 택배비 입력 및 최종 결제 금액 카드 -->
+          <!-- 결제 금액 카드 -->
           <div class="toss-card p-5 bg-[#191f28] text-white space-y-3">
             <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
               <label class="text-xs font-semibold text-slate-300">택배비 (배송비)</label>
@@ -211,24 +212,27 @@
                 카톡 답장 복사
               </button>
             </div>
-            <textarea id="kakao-preview-textarea" rows="8" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl leading-relaxed font-mono focus:bg-white focus:outline-none"></textarea>
+            <textarea id="kakao-preview-textarea" rows="7" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl leading-relaxed font-mono focus:bg-white focus:outline-none"></textarea>
           </div>
 
-          <!-- 거래명세표 이미지 (정통 슬림 규격) -->
+          <!-- 거래명세표 이미지 (모바일 가로형 보정 & 원터치 카톡 공유) -->
           <div class="toss-card p-4 space-y-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-700">거래명세표 이미지</span>
               <div class="flex gap-1.5">
-                <button onclick="copyInvoiceImage()" class="toss-btn text-xs bg-blue-50 text-[#3182f6] hover:bg-blue-100 font-semibold px-2.5 py-1.5 rounded-lg">
-                  이미지 복사
+                <button onclick="shareOrCopyInvoiceImage()" class="toss-btn text-xs bg-blue-50 text-[#3182f6] hover:bg-blue-100 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                  카톡/이미지 공유
                 </button>
                 <button onclick="downloadInvoiceImage()" class="toss-btn text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold px-2.5 py-1.5 rounded-lg">
                   저장
                 </button>
               </div>
             </div>
-            <div class="overflow-x-auto border border-slate-200 rounded-lg p-2 bg-slate-50 flex justify-center">
-              <div id="invoice-render-box" class="w-[360px] bg-white p-3 text-[10px] text-slate-900 border border-slate-400"></div>
+            
+            <!-- 가로형 비율 보존 뷰어 (모바일에서 세로로 찌그러지지 않게 480px 최소폭 고정) -->
+            <div class="overflow-x-auto border border-slate-200 rounded-xl p-2 bg-slate-50 flex justify-center">
+              <div id="invoice-render-box" style="width: 480px; min-width: 480px;" class="bg-white p-4 text-[10px] text-slate-900 border border-slate-400 shrink-0"></div>
             </div>
           </div>
 
@@ -238,38 +242,55 @@
 
     </section>
 
-    <!-- 2. 주문 내역 탭 -->
+    <!-- 2. 주문 내역 탭 (상단 통계/검색 바 + 출고 액션바 + 모바일 카드뷰) -->
     <section id="tab-order-list" class="hidden space-y-4">
-      <div class="toss-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-            <button onclick="setListFilter('all')" id="filter-btn-all" class="px-3 py-1 rounded-lg bg-white shadow-xs text-slate-800">전체</button>
-            <button onclick="setListFilter('unpaid')" id="filter-btn-unpaid" class="px-3 py-1 rounded-lg text-slate-500 hover:text-slate-800">미입금만</button>
-            <button onclick="setListFilter('paid')" id="filter-btn-paid" class="px-3 py-1 rounded-lg text-slate-500 hover:text-slate-800">입금완료</button>
+      
+      <!-- 1층: 필터 & 검색 통합 바 -->
+      <div class="toss-card p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          
+          <!-- 필터 칩 (전체, 미입금, 입금완료) -->
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold w-full sm:w-auto">
+            <button onclick="setListFilter('all')" id="filter-btn-all" class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg bg-white shadow-xs text-slate-800 font-bold">전체 (<span id="count-filter-all">0</span>)</button>
+            <button onclick="setListFilter('unpaid')" id="filter-btn-unpaid" class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-rose-600 hover:text-rose-700 font-bold">미입금 (<span id="count-filter-unpaid">0</span>)</button>
+            <button onclick="setListFilter('paid')" id="filter-btn-paid" class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 font-bold">입금완료 (<span id="count-filter-paid">0</span>)</button>
           </div>
-          <input type="text" id="order-search-input" oninput="renderOrdersTable()" placeholder="거래처/수령인/주소 검색" class="text-xs p-2 border border-slate-200 rounded-xl w-40 sm:w-48 outline-none">
+
+          <!-- 검색창 -->
+          <div class="relative w-full sm:w-64">
+            <input type="text" id="order-search-input" oninput="renderOrdersTable()" placeholder="거래처, 수령인, 주소 검색..." class="w-full text-xs p-2.5 pl-8 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#3182f6]">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
         </div>
-        
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="toss-btn text-xs bg-slate-800 hover:bg-black text-white px-3 py-2 rounded-xl font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm">
+
+        <!-- 2층: 택배 출고 전용 액션바 (택배 엑셀 다운 ➔ 송장 엑셀 업로드) -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+              <svg class="w-4 h-4 text-[#3182f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+              택배 출고 업무:
+            </span>
+            <button onclick="downloadDeliveryFormatExcel(false)" class="toss-btn text-xs bg-[#3182f6] hover:bg-blue-600 text-white px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 shadow-sm" title="택배입력양식.xls 규격 다운로드">
+              택배 엑셀 다운
+            </button>
+            <button onclick="downloadDeliveryFormatExcel(true)" class="toss-btn text-xs bg-blue-50 text-[#3182f6] hover:bg-blue-100 px-2 py-1.5 rounded-xl font-semibold" title="품목별 행 분리 다운">
+              (품목분리)
+            </button>
+          </div>
+
+          <label class="toss-btn text-xs bg-slate-800 hover:bg-black text-white px-3 py-1.5 rounded-xl font-bold cursor-pointer flex items-center gap-1.5 shadow-sm">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
             송장 엑셀 업로드
             <input type="file" id="tracking-excel-file" accept=".xlsx, .xls" class="hidden" onchange="handleTrackingExcelUpload(event)">
           </label>
-          
-          <div class="flex gap-1">
-            <button onclick="downloadDeliveryFormatExcel(false)" class="toss-btn text-xs bg-[#3182f6] hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-semibold flex items-center gap-1 shadow-sm" title="택배입력양식.xls 규격 다운로드">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              택배 엑셀 다운
-            </button>
-            <button onclick="downloadDeliveryFormatExcel(true)" class="toss-btn text-xs bg-blue-50 text-[#3182f6] hover:bg-blue-100 px-2 py-2 rounded-xl font-semibold" title="한 주문에 여러 품목이 있을 때 행을 나누어 다운">
-              (품목분리)
-            </button>
-          </div>
         </div>
       </div>
 
-      <div class="toss-card overflow-hidden">
+      <!-- 모바일 전용 카드 리스트 뷰 (화면 안 잘리고 한눈에 확인) -->
+      <div id="mobile-order-cards" class="md:hidden space-y-2.5"></div>
+
+      <!-- PC 전용 테이블 뷰 (넓은 모니터용) -->
+      <div class="hidden md:block toss-card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs whitespace-nowrap">
             <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold">
@@ -374,7 +395,18 @@
 
   </main>
 
-  <!-- 모바일 하단 내비게이션 바 -->
+  <!-- 품목 원터치 선택 바텀시트/모달 (터치 즉시 추가 & 닫힘) -->
+  <div id="product-select-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl animate-fade-in-up">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <h3 class="font-bold text-sm text-slate-800">추가할 품목을 터치하세요</h3>
+        <button onclick="closeProductSelectModal()" class="text-slate-400 text-lg p-1">✕</button>
+      </div>
+      <div id="product-modal-options" class="space-y-1.5 max-h-80 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- 모바일 하단 네비게이션 바 -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1.5 flex justify-around items-center z-30 shadow-lg text-[10px]">
     <button onclick="switchTab('new-order')" id="m-tab-new-order" class="flex flex-col items-center py-1 text-[#3182f6] font-bold">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -502,7 +534,7 @@
     /* =====================================================================
        0. 전역 설정 & 마스터 데이터
        ===================================================================== */
-    // 여기에 대표님의 Apps Script URL을 넣어두시면 모든 기기에서 100% 자동 동기화됩니다.
+    // 대표님의 구글 Apps Script URL을 아래 따옴표 안에 넣으시면 모바일에서도 톱니바퀴 누를 필요 없이 자동 연결됩니다.
     const DEFAULT_SHEET_URL = ""; 
 
     const MASTER_PRODUCTS = [
@@ -538,13 +570,13 @@
     }
 
     let currentOrderItems = [];
-    let isCurrentOrderSaved = false; // 주문 저장 후 덮어쓰기 방지 잠금 플래그
+    let isCurrentOrderSaved = false;
     let currentSelectedOrderId = null;
     let listFilter = 'all';
     let selectedOrderIds = new Set();
 
     window.addEventListener('DOMContentLoaded', () => {
-      initProductSelectDropdown();
+      initProductModalList();
       renderActiveProductRows();
       renderOrdersTable();
       renderClientsList();
@@ -552,7 +584,6 @@
       updateOrderCountBadge();
       updateSyncStatusUI(false);
       
-      // 앱 실행 즉시 구글 시트에서 최신 데이터 양방향 읽기
       if (config.sheetUrl) {
         fetchLatestOrdersFromGoogleSheet(false);
       }
@@ -584,16 +615,28 @@
     }
 
     /* =====================================================================
-       1. 품목 드롭다운 & 증감 버튼 UI
+       1. 품목 원터치 추가 & 닫힘 팝업
        ===================================================================== */
-    function initProductSelectDropdown() {
-      const select = document.getElementById('add-product-select');
-      select.innerHTML = '<option value="">+ 품목 추가 (터치하여 선택)...</option>' + 
-        MASTER_PRODUCTS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    function initProductModalList() {
+      const container = document.getElementById('product-modal-options');
+      container.innerHTML = MASTER_PRODUCTS.map(p => `
+        <button onclick="handleInstantAddProduct('${p.id}')" class="w-full text-left p-3 rounded-xl hover:bg-blue-50 border border-slate-100 font-bold text-xs text-slate-800 flex items-center justify-between active:bg-blue-100 transition">
+          <span>${p.name}</span>
+          <span class="text-[#3182f6] font-semibold text-[11px]">+ 추가</span>
+        </button>
+      `).join('');
     }
 
-    function handleSelectProductInstant(prodId) {
-      if (!prodId) return;
+    function openProductSelectModal() {
+      document.getElementById('product-select-modal').classList.remove('hidden');
+    }
+
+    function closeProductSelectModal() {
+      document.getElementById('product-select-modal').classList.add('hidden');
+    }
+
+    // 터치하는 순간 목록에 추가되고 모달은 자동으로 닫힘
+    function handleInstantAddProduct(prodId) {
       const p = MASTER_PRODUCTS.find(x => x.id === prodId);
       if (!p) return;
 
@@ -610,7 +653,7 @@
           itemTotal: p.defaultPrice
         });
       }
-      document.getElementById('add-product-select').value = '';
+      closeProductSelectModal();
       renderActiveProductRows();
     }
 
@@ -619,7 +662,7 @@
       if (currentOrderItems.length === 0) {
         container.innerHTML = `
           <div class="p-4 text-center border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
-            카톡 자동 채우기를 누르거나 아래 드롭다운에서 품목을 선택하세요.
+            카톡 자동 채우기를 누르거나 아래 버튼으로 품목을 추가하세요.
           </div>
         `;
         calculateNewOrderTotals();
@@ -636,16 +679,9 @@
           </div>
           
           <div class="flex items-center gap-1 shrink-0">
-            <!-- - 버튼 -->
             <button onclick="changeItemQty(${idx}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 font-bold active:bg-slate-100">-</button>
-            
-            <!-- 수량 입력 칸 -->
             <input type="number" value="${item.qty}" min="1" class="w-12 text-center p-1 border border-slate-200 rounded-lg outline-none font-black text-xs text-[#191f28] bg-white" oninput="setItemQtyDirect(${idx}, this.value)">
-            
-            <!-- + 버튼 -->
             <button onclick="changeItemQty(${idx}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-600 font-bold active:bg-slate-100">+</button>
-
-            <!-- 삭제 버튼 -->
             <button onclick="removeItemRow(${idx})" class="text-slate-300 hover:text-rose-500 p-1.5 ml-1 text-sm font-semibold">✕</button>
           </div>
         </div>
@@ -676,7 +712,7 @@
     }
 
     /* =====================================================================
-       2. 스마트 라벨 + 멀티라인 주소 정밀 파서 (줄바꿈 끊김 해결)
+       2. 스마트 카톡 파싱 (줄바꿈 주소 완벽 결합)
        ===================================================================== */
     function parseRawOrderText() {
       if (isCurrentOrderSaved) {
@@ -694,7 +730,6 @@
       let memo = "";
       let parsedItems = [];
 
-      // 1. 전화번호 추출 (띄어쓰기, 하이픈 포함 유연 인식)
       const phoneRegex = /(01[016789][\s-]?\d{3,4}[\s-]?\d{4}|0\d{1,2}[\s-]?\d{3,4}[\s-]?\d{4})/;
       const phoneMatch = raw.match(phoneRegex);
       if (phoneMatch) {
@@ -704,7 +739,6 @@
         else phone = phoneMatch[0].trim();
       }
 
-      // 2. 라벨 기반 파싱
       const rawLines = raw.split('\n').map(l => l.trim()).filter(Boolean);
       let foundLabels = false;
       let labelProduct = "";
@@ -737,18 +771,14 @@
           isCollectingAddress = false;
           memo = clean.replace(/^(픽업방법|배송방법|메모|요청사항)[\s:>]+/i, '').trim();
         } else {
-          // 다음 라벨이 오기 전까지 줄바꿈된 상세주소 계속 수집
           if (isCollectingAddress && !/^(■|●|▶|►|◆|-|\*)/.test(line)) {
             multiLineAddrBuffer.push(line);
           }
         }
       }
 
-      // 멀티라인 주소 버퍼에서 주소와 상호/수령인 분리
       if (multiLineAddrBuffer.length > 0) {
         let combinedAddr = multiLineAddrBuffer.join(' ').trim();
-        
-        // 주소 패턴 탐색
         const addrRegex = /([가-힣]{2,4}(?:특별시|광역시|도|시)?[\s]*[가-힣]{1,4}(?:구|군|시)?[\s]*[가-힣\d]{1,8}(?:동|읍|면|로|길)[\s]*[\d\-]+(?:[\s]*[가-힣\d\-\s,호층동단지]+)?)/;
         const match = combinedAddr.match(addrRegex);
         if (match) {
@@ -763,7 +793,6 @@
         }
       }
 
-      // 라벨 품목 매칭
       if (labelProduct) {
         let matched = false;
         for (const prod of MASTER_PRODUCTS) {
@@ -785,7 +814,6 @@
         }
       }
 
-      // 3. 비정형 자연어 주문일 경우 보조 처리
       if (!foundLabels) {
         let textWithoutPhone = raw;
         if (phoneMatch) textWithoutPhone = textWithoutPhone.replace(phoneMatch[0], ' ');
@@ -825,7 +853,6 @@
         });
       }
 
-      // 4. 폼에 바인딩 (저장 전에는 자유롭게 덮어쓰기 새로고침)
       if (clientName) {
         document.getElementById('order-client-name').value = clientName;
         handleClientSearch(clientName);
@@ -918,7 +945,6 @@
       const supply = Math.round(finalTotal / 1.1);
       const vat = finalTotal - supply;
 
-      // 화면 요소 업데이트
       document.getElementById('preview-items-subtotal').textContent = `${itemsTotal.toLocaleString()}원`;
       document.getElementById('preview-shipping-fee').textContent = `${shippingFee.toLocaleString()}원`;
 
@@ -960,7 +986,7 @@
       document.getElementById('kakao-preview-textarea').value = lines.join('\n');
     }
 
-    // 정통 슬림 거래명세표 렌더링
+    // 가로형 비율 고정 명세표 (480px)
     function renderInvoiceBox(items, shippingFee, supply, vat, finalTotal) {
       const box = document.getElementById('invoice-render-box');
       const clientName = document.getElementById('order-client-name').value || '(공급받는자)';
@@ -970,8 +996,7 @@
       box.innerHTML = `
         <div class="text-center font-black text-sm tracking-widest border-b-2 border-slate-900 pb-1 mb-2">거 래 명 세 표</div>
         
-        <!-- 공급자 / 공급받는자 정통 격자 표 -->
-        <table class="w-full border-collapse border border-slate-400 text-[9px] mb-2">
+        <table class="w-full border-collapse border border-slate-400 text-[10px] mb-2">
           <tr>
             <td class="bg-slate-100 font-bold p-1 text-center w-8 border-r border-b border-slate-400" rowspan="3">공<br>급<br>자</td>
             <td class="bg-slate-50 p-1 border-r border-b border-slate-400 w-12 font-semibold">상호</td>
@@ -994,14 +1019,13 @@
           </tr>
         </table>
 
-        <!-- 품목 상세 테이블 -->
-        <table class="w-full text-[9px] border-collapse border border-slate-400 mb-2">
+        <table class="w-full text-[10px] border-collapse border border-slate-400 mb-2">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-400 font-semibold text-slate-800">
               <th class="p-1 border-r border-slate-400 text-left">품목명</th>
-              <th class="p-1 border-r border-slate-400 text-center w-10">수량</th>
-              <th class="p-1 border-r border-slate-400 text-right w-14">단가</th>
-              <th class="p-1 text-right w-16">금액</th>
+              <th class="p-1 border-r border-slate-400 text-center w-12">수량</th>
+              <th class="p-1 border-r border-slate-400 text-right w-16">단가</th>
+              <th class="p-1 text-right w-20">금액</th>
             </tr>
           </thead>
           <tbody>
@@ -1025,10 +1049,9 @@
           </tbody>
         </table>
 
-        <!-- 합계 및 공급가/세액 -->
-        <div class="bg-slate-100 border border-slate-400 p-1.5 flex justify-between items-center text-[10px]">
-          <span class="font-semibold text-slate-700">공급가액: ${supply.toLocaleString()} / 세액: ${vat.toLocaleString()}</span>
-          <span class="font-black text-slate-900 text-xs">합계: ${finalTotal.toLocaleString()}원</span>
+        <div class="bg-slate-100 border border-slate-400 p-1.5 flex justify-between items-center text-[11px]">
+          <span class="font-semibold text-slate-700">공급가: ${supply.toLocaleString()} / 세액: ${vat.toLocaleString()}</span>
+          <span class="font-black text-slate-900 text-xs">최종합계: ${finalTotal.toLocaleString()}원</span>
         </div>
       `;
     }
@@ -1038,12 +1061,33 @@
       navigator.clipboard.writeText(text).then(() => alert("카톡 답장이 복사되었습니다!"));
     }
 
-    function copyInvoiceImage() {
+    // 모바일 카톡 이미지 공유 / PC 클립보드 복사 완벽 호환
+    function shareOrCopyInvoiceImage() {
       const box = document.getElementById('invoice-render-box');
       html2canvas(box, { scale: 2 }).then(canvas => {
         canvas.toBlob(blob => {
-          const item = new ClipboardItem({ "image/png": blob });
-          navigator.clipboard.write([item]).then(() => alert("거래명세표 이미지가 복사되었습니다!"));
+          const file = new File([blob], `거래명세표_${document.getElementById('order-client-name').value || '까치방앗간'}.png`, { type: 'image/png' });
+
+          // 모바일: Web Share API로 카카오톡 직접 공유창 호출
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+              files: [file],
+              title: '까치방앗간 거래명세표',
+              text: `${document.getElementById('order-client-name').value || '거래처'} 거래명세표입니다.`
+            }).catch(() => {});
+          } else {
+            // PC 또는 공유 미지원 브라우저: 클립보드 복사
+            try {
+              const item = new ClipboardItem({ "image/png": blob });
+              navigator.clipboard.write([item]).then(() => {
+                alert("거래명세표 이미지가 클립보드에 복사되었습니다! (PC 카카오톡 대화창에 바로 Ctrl+V 하세요)");
+              }).catch(() => {
+                downloadInvoiceImage();
+              });
+            } catch (e) {
+              downloadInvoiceImage();
+            }
+          }
         });
       });
     }
@@ -1059,7 +1103,7 @@
     }
 
     /* =====================================================================
-       4. 주문 저장 & 덮어쓰기 방지 잠금
+       4. 주문 저장 & 덮어쓰기 방지
        ===================================================================== */
     function saveNewOrder() {
       const clientName = document.getElementById('order-client-name').value.trim();
@@ -1120,7 +1164,6 @@
       orders.unshift(newOrder);
       saveOrdersData();
 
-      // 거래처 마스터 업데이트
       let client = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
       if (!client) {
         client = {
@@ -1141,10 +1184,8 @@
       }
       localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
 
-      // 구글 시트로 실시간 동기화 전송
       syncOrderToGoogleSheet(newOrder);
 
-      // 주문 완료 후 덮어쓰기 방지 잠금 활성화
       isCurrentOrderSaved = true;
       document.getElementById('order-lock-indicator').textContent = `● [주문번호: ${orderId}] 저장완료 (수정 방지 잠금됨)`;
       document.getElementById('order-lock-indicator').className = 'text-xs text-emerald-600 font-bold';
@@ -1152,7 +1193,7 @@
       document.getElementById('btn-save-order').className = 'toss-btn w-full bg-slate-700 text-slate-400 font-bold py-3.5 rounded-xl text-base text-center cursor-not-allowed';
       document.getElementById('btn-save-order').textContent = '저장 완료됨 (새 주문 작성 버튼을 누르세요)';
 
-      alert(`주문이 성공적으로 저장되었습니다!\n(주문번호: ${orderId})\n\n새 주문을 작성하시려면 [새 주문 작성 (초기화)] 버튼을 눌러주세요.`);
+      alert(`주문이 성공적으로 저장되었습니다!\n(주문번호: ${orderId})\n\n새 주문을 작성하시려면 상단의 [새 주문 작성 (초기화)]를 눌러주세요.`);
       updateOrderCountBadge();
     }
 
@@ -1178,7 +1219,7 @@
     }
 
     /* =====================================================================
-       5. 구글 시트 실시간 양방향 동기화 (읽기 / 쓰기)
+       5. 구글 시트 양방향 동기화
        ===================================================================== */
     function syncOrderToGoogleSheet(order) {
       if (!config.sheetUrl) return;
@@ -1189,12 +1230,9 @@
         body: JSON.stringify(order)
       }).then(() => {
         updateSyncStatusUI(true);
-      }).catch(err => {
-        console.error('구글 시트 전송 실패', err);
-      });
+      }).catch(err => console.error(err));
     }
 
-    // 구글 시트에서 최신 데이터 읽어오기 (양방향 동기화)
     function fetchLatestOrdersFromGoogleSheet(isManual = false) {
       if (!config.sheetUrl) return;
       
@@ -1207,9 +1245,8 @@
         .then(res => res.json())
         .then(data => {
           if (data && data.orders && data.orders.length > 0) {
-            // 구글 시트의 주문 목록으로 로컬 DB 갱신
             orders = data.orders;
-            saveOrdersData(false); // 재귀 호출 방지
+            saveOrdersData(false);
             renderOrdersTable();
             refreshAnalytics();
             updateOrderCountBadge();
@@ -1222,7 +1259,6 @@
           }
         })
         .catch(err => {
-          console.error("동기화 읽기 실패", err);
           statusText.textContent = '로컬 브라우저 저장';
           document.getElementById('sync-status').className = 'toss-btn text-[11px] bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full font-medium flex items-center gap-1';
         })
@@ -1244,7 +1280,7 @@
     }
 
     /* =====================================================================
-       6. 택배입력양식.xls 호환 다운로드 & 송장 업로드
+       6. 택배 엑셀 다운로드 & 송장 업로드
        ===================================================================== */
     function downloadDeliveryFormatExcel(splitByItem = false) {
       let targets = orders.filter(o => o.status !== '주문취소');
@@ -1347,12 +1383,17 @@
     }
 
     /* =====================================================================
-       7. 주문 내역 테이블 & 서랍
+       7. 주문 내역 렌더링 (모바일 카드 뷰 + PC 테이블 뷰)
        ===================================================================== */
     function renderOrdersTable() {
-      const tbody = document.getElementById('orders-table-body');
       const search = (document.getElementById('order-search-input')?.value || '').toLowerCase();
       
+      // 필터 카운트 갱신
+      const validOrders = orders.filter(o => o.status !== '주문취소');
+      document.getElementById('count-filter-all').textContent = validOrders.length;
+      document.getElementById('count-filter-unpaid').textContent = validOrders.filter(o => o.paymentStatus !== 'paid').length;
+      document.getElementById('count-filter-paid').textContent = validOrders.filter(o => o.paymentStatus === 'paid').length;
+
       let filtered = orders.filter(o => {
         if (listFilter === 'unpaid' && o.paymentStatus === 'paid') return false;
         if (listFilter === 'paid' && o.paymentStatus !== 'paid') return false;
@@ -1365,6 +1406,51 @@
         return true;
       });
 
+      // 1. 모바일 전용 카드 뷰 렌더링
+      const mobileContainer = document.getElementById('mobile-order-cards');
+      if (filtered.length === 0) {
+        mobileContainer.innerHTML = '<div class="toss-card p-6 text-center text-xs text-slate-400">주문 내역이 없습니다.</div>';
+      } else {
+        mobileContainer.innerHTML = filtered.map(o => `
+          <div onclick="openOrderDrawer('${o.id}')" class="toss-card p-4 space-y-2.5 active:bg-slate-50 transition cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="font-extrabold text-sm text-slate-900">${o.clientName}</span>
+                <span class="text-xs text-slate-500 ml-1">(${o.receiverName})</span>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-black text-sm text-[#191f28]">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</div>
+                <button onclick="event.stopPropagation(); togglePaymentStatusInline('${o.id}')" class="mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  o.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                }">
+                  ${o.paymentStatus === 'paid' ? '● 입금완료' : '○ 미입금'}
+                </button>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-2 rounded-xl text-xs space-y-1">
+              <div class="text-slate-700 font-semibold truncate">${o.itemsSummary}</div>
+              <div class="text-slate-400 text-[11px] truncate flex items-center gap-1">
+                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                ${o.receiverAddress}
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-[11px] pt-0.5">
+              <span class="text-slate-400">송장: <b class="text-slate-700 font-mono">${o.trackingNo || '미등록'}</b></span>
+              <span class="px-2 py-0.5 rounded-full font-semibold ${
+                o.status === '접수완료' ? 'bg-blue-50 text-blue-600' :
+                o.status === '주문변경' ? 'bg-amber-50 text-amber-600' :
+                o.status === '발송완료' ? 'bg-slate-100 text-slate-600' : 'bg-red-50 text-red-400'
+              }">${o.status}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 2. PC 전용 테이블 뷰 렌더링
+      const tbody = document.getElementById('orders-table-body');
       tbody.innerHTML = filtered.length === 0 ? 
         '<tr><td colspan="9" class="p-8 text-center text-slate-400">주문 내역이 없습니다.</td></tr>' :
         filtered.map(o => `
@@ -1403,8 +1489,8 @@
       listFilter = filter;
       ['all', 'unpaid', 'paid'].forEach(f => {
         const btn = document.getElementById(`filter-btn-${f}`);
-        if (f === filter) btn.className = 'px-3 py-1 rounded-lg bg-white shadow-xs text-slate-800 font-bold';
-        else btn.className = 'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-800';
+        if (f === filter) btn.className = 'flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg bg-white shadow-xs text-slate-800 font-bold';
+        else btn.className = 'flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 font-medium';
       });
       renderOrdersTable();
     }
@@ -1571,7 +1657,7 @@
        ===================================================================== */
     function exportFullBackup() {
       const backupData = {
-        version: "2.2",
+        version: "2.3",
         exportDate: new Date().toISOString(),
         orders: orders,
         clients: clients,
