@@ -22,7 +22,7 @@
 </head>
 <body class="bg-[#f2f4f6] text-[#191f28] min-h-screen flex flex-col pb-24 md:pb-6 antialiased select-none">
 
-  <!-- 상단 슬림 헤더 -->
+  <!-- 슬림 상단 바 -->
   <header class="bg-white border-b border-[#e5e8eb] sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-3 md:px-4 h-13 md:h-16 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -57,7 +57,6 @@
   <!-- 메인 영역 -->
   <main class="max-w-7xl mx-auto px-3 md:px-4 py-3 md:py-6 flex-1 w-full overflow-x-hidden">
 
-    <!-- 상단 대제목 -->
     <div class="mb-3 md:mb-5">
       <h1 id="page-main-title" class="text-lg md:text-2xl font-black text-slate-900 tracking-tight">신규 주문</h1>
     </div>
@@ -65,7 +64,7 @@
     <!-- 1. 신규 주문 탭 -->
     <section id="tab-new-order" class="space-y-3 md:space-y-6">
       
-      <!-- 접수 모드 선택 바 -->
+      <!-- 접수 모드 -->
       <div class="flex justify-between items-center bg-white p-2.5 rounded-2xl border border-slate-200">
         <span class="text-xs font-bold text-slate-700">접수 모드:</span>
         <div class="flex gap-1.5">
@@ -144,16 +143,21 @@
           <!-- 좌측 컬럼 -->
           <div class="lg:col-span-7 space-y-3 md:space-y-4">
             
-            <!-- 1. 발주 거래처 -->
+            <!-- 1. 발주 거래처 (벤더/직거래 토글 & 과세/면세 토글 탑재) -->
             <div class="toss-card p-3.5 md:p-5 space-y-2.5">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 class="font-bold text-xs md:text-sm text-slate-800 flex items-center gap-2">
-                  <span>1. 발주 거래처 (정산처)</span>
-                  <span id="client-type-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full font-medium"></span>
-                </h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-xs md:text-sm text-slate-800">1. 발주 거래처 (정산처)</h3>
+                  <!-- 거래처 구분 토글: 벤더 vs 직거래 -->
+                  <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+                    <button type="button" id="client-type-direct" onclick="setClientTypeOption('직거래')" class="px-2.5 py-0.5 rounded-md bg-white text-blue-600 shadow-xs">직거래</button>
+                    <button type="button" id="client-type-vendor" onclick="setClientTypeOption('벤더')" class="px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800">벤더</button>
+                  </div>
+                </div>
+
                 <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
-                  <button type="button" id="tax-type-taxable" onclick="setTaxType(false)" class="px-3 py-1 rounded-md bg-white text-slate-800 shadow-xs">과세</button>
-                  <button type="button" id="tax-type-exempt" onclick="setTaxType(true)" class="px-3 py-1 rounded-md text-slate-500 hover:text-slate-800">면세</button>
+                  <button type="button" id="tax-type-taxable" onclick="setTaxType(false)" class="px-2.5 py-0.5 rounded-md bg-white text-slate-800 shadow-xs">과세</button>
+                  <button type="button" id="tax-type-exempt" onclick="setTaxType(true)" class="px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800">면세</button>
                 </div>
               </div>
               
@@ -228,7 +232,7 @@
                 <div id="packing-groups-container" class="space-y-1"></div>
               </div>
 
-              <!-- 품목 하단 택배비 결정란 -->
+              <!-- 택배비 결정란 -->
               <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-200 flex justify-between items-center text-xs mt-2">
                 <div>
                   <label class="font-bold text-blue-900 block text-xs">택배비 (배송비) 결정</label>
@@ -319,7 +323,6 @@
           </div>
         </div>
 
-        <!-- 전체선택 체크박스 및 송장 업로드 바 -->
         <div class="pt-2.5 border-t border-slate-100 flex justify-between items-center text-xs">
           <label class="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
             <input type="checkbox" id="chk-all-orders" onchange="toggleSelectAllOrders(this.checked)" class="w-4 h-4 rounded text-[#3182f6]">
@@ -337,7 +340,7 @@
       <!-- 모바일 카드 뷰 -->
       <div id="mobile-order-cards" class="md:hidden space-y-2.5"></div>
 
-      <!-- PC 와이드 테이블 -->
+      <!-- PC 테이블 -->
       <div class="hidden md:block toss-card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs whitespace-nowrap">
@@ -435,7 +438,7 @@
 
   </main>
 
-  <!-- 하단 고정 플로팅 액션 바 -->
+  <!-- 하단 플로팅 액션 바 -->
   <aside id="floating-action-bar" class="fixed bottom-16 md:bottom-6 left-3 right-3 max-w-xl mx-auto bg-[#191f28]/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl flex items-center justify-between z-40 transition-all duration-300 transform translate-y-28 opacity-0 pointer-events-none">
     <div class="flex items-center gap-2">
       <span class="bg-[#3182f6] text-white text-xs font-black px-2.5 py-1 rounded-full" id="floating-selected-count">0건</span>
@@ -452,7 +455,7 @@
     </div>
   </aside>
 
-  <!-- 하단 모바일 네비 바 -->
+  <!-- 하단 모바일 바 -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 flex justify-around items-center z-30 shadow-lg text-[10px]">
     <button onclick="switchTab('new-order')" id="m-tab-new-order" class="flex flex-col items-center py-1 text-[#3182f6] font-bold">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -476,7 +479,7 @@
     </button>
   </nav>
 
-  <!-- [모달 1] 내 회사정보 창고 -->
+  <!-- [모달 1] 내 회사정보 -->
   <div id="company-info-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-2.5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -569,7 +572,7 @@
     </div>
   </div>
 
-  <!-- [모달 2] 품목 바텀시트 -->
+  <!-- [모달 2] 품목 선택 바텀시트 -->
   <div id="product-select-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-4 space-y-2.5 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -689,7 +692,7 @@
             <label class="font-semibold text-slate-500 block mb-0.5">거래처 구분</label>
             <select id="edit-client-type" class="w-full p-2 border border-slate-200 rounded-xl outline-none bg-white font-bold">
               <option value="직거래">직거래</option>
-              <option value="벤더사">벤더사</option>
+              <option value="벤더">벤더</option>
             </select>
           </div>
           <div>
@@ -734,7 +737,7 @@
     </div>
   </div>
 
-  <!-- [모달 5] 주문 수정 모달 (2층 상하 배치: 상품명 100% 온전 노출) -->
+  <!-- [모달 5] 주문 내용 수정 모달 (2층 상하 배치: 상품명 100% 온전 노출) -->
   <div id="edit-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -829,6 +832,7 @@
     let currentSelectedOrderId = null;
     let currentDrawerMsgTab = 'order';
     let isTaxExemptOrder = false;
+    let currentClientType = '직거래'; // '직거래' vs '벤더'
     let listFilter = 'all';
     let activeClientObj = null;
     let parsedBulkRows = [];
@@ -892,6 +896,19 @@
       if (tabId === 'clients') renderClientsList();
       if (tabId === 'analytics') refreshAnalytics();
       if (tabId === 'tax') renderTaxTable();
+    }
+
+    function setClientTypeOption(type) {
+      currentClientType = type;
+      const btnDirect = document.getElementById('client-type-direct');
+      const btnVendor = document.getElementById('client-type-vendor');
+      if (type === '벤더') {
+        btnVendor.className = 'px-2.5 py-0.5 rounded-md bg-white text-purple-600 shadow-xs font-bold';
+        btnDirect.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
+      } else {
+        btnDirect.className = 'px-2.5 py-0.5 rounded-md bg-white text-blue-600 shadow-xs font-bold';
+        btnVendor.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
+      }
     }
 
     function toggleBulkOrderMode(isBulk) {
@@ -1065,13 +1082,13 @@
       const indicator = document.getElementById('tax-mode-indicator');
 
       if (isExempt) {
-        btnTaxable.className = 'px-3 py-1 rounded-md text-slate-500 hover:text-slate-800';
-        btnExempt.className = 'px-3 py-1 rounded-md bg-amber-500 text-white shadow-xs font-bold';
+        btnTaxable.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
+        btnExempt.className = 'px-2.5 py-0.5 rounded-md bg-amber-500 text-white shadow-xs font-bold';
         indicator.textContent = '면세';
         indicator.className = 'text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold';
       } else {
-        btnTaxable.className = 'px-3 py-1 rounded-md bg-white text-slate-800 shadow-xs font-bold';
-        btnExempt.className = 'px-3 py-1 rounded-md text-slate-500 hover:text-slate-800';
+        btnTaxable.className = 'px-2.5 py-0.5 rounded-md bg-white text-slate-800 shadow-xs font-bold';
+        btnExempt.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
         indicator.textContent = '과세 (VAT 포함)';
         indicator.className = 'text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold';
       }
@@ -1255,6 +1272,7 @@
       renderActiveProductRows();
     }
 
+    // AI 파싱 및 벤더/직거래 1차 자동 판별
     function parseRawOrderText() {
       if (isCurrentOrderSaved) {
         alert("이미 저장이 완료된 주문입니다. 새로운 주문을 작성하시려면 상단의 [새 주문 작성 (초기화)] 버튼을 눌러주세요.");
@@ -1407,22 +1425,28 @@
       if (address) document.getElementById('order-receiver-address').value = address;
       if (memo) document.getElementById('order-memo').value = memo;
 
+      // 벤더 vs 직거래 AI 1차 판별 로직
+      let autoDetectedType = '직거래';
+      if (/위탁|벤더|공급처|원청|발주처/i.test(raw) || (clientName && clientName.includes('베러픽'))) {
+        autoDetectedType = '벤더';
+      }
+      setClientTypeOption(autoDetectedType);
+
       currentOrderItems = parsedItems;
       renderActiveProductRows();
     }
 
     function handleClientSearch(val) {
       val = val.trim();
-      const badge = document.getElementById('client-type-badge');
       const dropdown = document.getElementById('client-autocomplete');
       const recentBox = document.getElementById('client-recent-addresses-box');
 
       if (!val) {
-        badge.className = 'hidden';
         dropdown.classList.add('hidden');
         recentBox.classList.add('hidden');
         activeClientObj = null;
         setTaxType(false);
+        setClientTypeOption('직거래');
         return;
       }
 
@@ -1432,7 +1456,7 @@
           <div onclick="selectClient('${c.id}')" class="p-2 hover:bg-slate-100 cursor-pointer border-b border-slate-50 last:border-0 text-xs">
             <div class="font-bold text-slate-800 flex items-center justify-between">
               <span>${c.name}</span>
-              <span class="text-[9px] ${c.clientType === '벤더사' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-1 rounded">${c.clientType || '직거래'}</span>
+              <span class="text-[9px] ${c.clientType === '벤더' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-1.5 py-0.5 rounded">${c.clientType || '직거래'}</span>
             </div>
             <div class="text-[10px] text-slate-400 truncate">${c.receiverAddress || '기본 주소 없음'}</div>
           </div>
@@ -1444,8 +1468,6 @@
       } else {
         dropdown.classList.add('hidden');
         recentBox.classList.add('hidden');
-        badge.textContent = '신규 거래처';
-        badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700';
         activeClientObj = null;
       }
     }
@@ -1466,12 +1488,10 @@
       if (!document.getElementById('order-receiver-phone').value) document.getElementById('order-receiver-phone').value = client.receiverPhone || '';
       if (!document.getElementById('order-receiver-address').value) document.getElementById('order-receiver-address').value = client.receiverAddress || '';
 
-      const badge = document.getElementById('client-type-badge');
-      badge.textContent = client.clientType || '직거래';
-      badge.className = `text-[10px] px-2 py-0.5 rounded-full font-medium ${client.clientType === '벤더사' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`;
-
+      setClientTypeOption(client.clientType || '직거래');
       setTaxType(Boolean(client.isTaxExempt));
 
+      // 과거 주문 DB에서 배송지 이력 실시간 추출
       const pastAddresses = [];
       orders.forEach(o => {
         if (o.clientName.trim().toLowerCase() === client.name.trim().toLowerCase() && o.receiverAddress) {
@@ -1771,6 +1791,7 @@
         bizNum,
         email: clientEmail,
         isTaxExempt: isTaxExemptOrder,
+        clientType: currentClientType, // '직거래' vs '벤더'
         receiverName,
         receiverPhone,
         receiverAddress,
@@ -1788,7 +1809,7 @@
         status: '접수완료',
         courier: 'CJ대한통운',
         trackingNo: '',
-        auditLogs: [`[${dateStr}] 접수완료 (${isTaxExemptOrder ? '면세' : '과세'})`]
+        auditLogs: [`[${dateStr}] 접수완료 (${currentClientType}, ${isTaxExemptOrder ? '면세' : '과세'})`]
       };
 
       orders.unshift(newOrder);
@@ -1799,7 +1820,7 @@
         client = {
           id: `CLT-${Date.now().toString().slice(-5)}`,
           name: clientName,
-          clientType: '직거래',
+          clientType: currentClientType,
           bizNum: bizNum,
           email: clientEmail,
           isTaxExempt: isTaxExemptOrder,
@@ -1810,6 +1831,7 @@
         };
         clients.push(client);
       } else {
+        client.clientType = currentClientType;
         if (bizNum) client.bizNum = bizNum;
         if (clientEmail) client.email = clientEmail;
         if (receiverPhone) client.receiverPhone = receiverPhone;
@@ -1821,7 +1843,7 @@
       syncOrderToGoogleSheet(newOrder);
 
       isCurrentOrderSaved = true;
-      document.getElementById('order-lock-indicator').textContent = `● [주문번호: ${orderId}] 저장완료 (수정 방지됨)`;
+      document.getElementById('order-lock-indicator').textContent = `● [주문번호: ${orderId}] 저장완료`;
       document.getElementById('order-lock-indicator').className = 'text-[11px] text-emerald-600 font-bold';
       document.getElementById('btn-save-order').disabled = true;
       document.getElementById('btn-save-order').className = 'toss-btn w-full bg-slate-700 text-slate-400 font-bold py-3.5 rounded-xl text-sm md:text-base text-center cursor-not-allowed';
@@ -1842,7 +1864,6 @@
       document.getElementById('order-receiver-address').value = '';
       document.getElementById('order-memo').value = '';
       document.getElementById('order-shipping-fee').value = 0;
-      document.getElementById('client-type-badge').className = 'hidden';
       document.getElementById('client-recent-addresses-box').classList.add('hidden');
       
       document.getElementById('order-lock-indicator').textContent = '';
@@ -1851,6 +1872,7 @@
       document.getElementById('btn-save-order').textContent = '주문 저장 완료';
 
       setTaxType(false);
+      setClientTypeOption('직거래');
       activeClientObj = null;
       currentOrderItems = [];
       renderActiveProductRows();
@@ -1888,7 +1910,8 @@
         .then(res => res.json())
         .then(data => {
           if (data) {
-            if (data.orders && data.orders.length > 0) {
+            // 시트 데이터가 0건이면 로컬도 즉시 0건으로 비움
+            if (data.orders !== undefined) {
               orders = data.orders.map(o => {
                 if (!o.items || o.items.length === 0) {
                   o.items = [];
@@ -1915,18 +1938,19 @@
               refreshAnalytics();
               updateOrderCountBadge();
             }
-            if (data.clients && data.clients.length > 0) {
+
+            if (data.clients !== undefined) {
               clients = data.clients;
               localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
               renderClientsList();
             }
+
             if (data.items && data.items.length > 0) {
               data.items.forEach(ci => {
                 const target = MASTER_PRODUCTS.find(p => p.id === ci.id || p.name === ci.name);
                 if (target) {
                   target.defaultPrice = ci.defaultPrice;
                   if (ci.carton) target.carton = ci.carton;
-                  if (ci.group) target.group = ci.group;
                 }
               });
               initProductModalList();
@@ -2422,6 +2446,7 @@
       }
     }
 
+    // 직거래 vs 벤더 구분 정확 반영 CRM
     function renderClientsList() {
       const container = document.getElementById('clients-cards-container');
       const search = (document.getElementById('client-search-box')?.value || '').toLowerCase();
@@ -2433,12 +2458,12 @@
         let cleanMemo = c.memo || '';
         if (cleanMemo.startsWith('{') && cleanMemo.includes('}')) cleanMemo = '';
 
-        const isVendor = (c.clientType === '벤더사');
+        const isVendor = (c.clientType === '벤더');
 
         entityMap.set(c.name, {
           id: c.id,
           name: c.name,
-          type: isVendor ? '벤더사' : '직거래',
+          type: isVendor ? '벤더' : '직거래',
           badgeClass: isVendor ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
           isDirect: !isVendor,
           bizNum: c.bizNum || '',
@@ -2465,17 +2490,20 @@
           }
         }
 
-        if (o.receiverName && o.receiverName !== o.clientName) {
+        // '벤더' 주문인 경우에만 수령인을 경유처로 분리 생성 (직거래 주문은 절대 분리 안 함)
+        const isOrderFromVendor = (o.clientType === '벤더') || (entityMap.has(o.clientName) && entityMap.get(o.clientName).type === '벤더');
+
+        if (isOrderFromVendor && o.receiverName && o.receiverName !== o.clientName) {
           const destKey = `${o.receiverName} (${o.clientName} 경유)`;
           if (!entityMap.has(destKey)) {
             entityMap.set(destKey, {
               id: `DEST-${o.id}`,
               name: o.receiverName,
               vendorName: o.clientName,
-              type: `벤더사 [${o.clientName}] 경유`,
+              type: `벤더 [${o.clientName}] 경유`,
               badgeClass: 'bg-indigo-100 text-indigo-700',
               isDirect: false,
-              bizNum: '🔒 벤더사 경유 (단가 잠금)',
+              bizNum: '🔒 벤더 경유 (단가 잠금)',
               email: '',
               phone: o.receiverPhone || '',
               address: o.receiverAddress || '',
