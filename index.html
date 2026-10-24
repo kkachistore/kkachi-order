@@ -22,7 +22,7 @@
 </head>
 <body class="bg-[#f2f4f6] text-[#191f28] min-h-screen flex flex-col pb-20 md:pb-6 antialiased select-none">
 
-  <!-- 슬림해진 모바일 1줄 헤더 -->
+  <!-- 상단 헤더 -->
   <header class="bg-white border-b border-[#e5e8eb] sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-3 md:px-4 h-13 md:h-16 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -47,8 +47,8 @@
     <!-- PC 탭 바 -->
     <div class="hidden md:flex max-w-7xl mx-auto px-4 gap-6 text-sm font-semibold border-t border-slate-100">
       <button onclick="switchTab('new-order')" id="tab-btn-new-order" class="py-3 border-b-2 border-[#191f28] text-[#191f28]">신규 주문</button>
-      <button onclick="switchTab('order-list')" id="tab-btn-order-list" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">주문 내역 <span id="badge-total-orders" class="ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full text-xs">0</span></button>
-      <button onclick="switchTab('clients')" id="tab-btn-clients" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">거래처 CRM 관리</button>
+      <button onclick="switchTab('order-list')" id="tab-btn-order-list" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">주문 내역 조회 <span id="badge-total-orders" class="ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full text-xs">0</span></button>
+      <button onclick="switchTab('clients')" id="tab-btn-clients" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">거래처 및 이력 관리</button>
       <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">손익 관리</button>
       <button onclick="switchTab('tax')" id="tab-btn-tax" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">세금계산서 집계</button>
     </div>
@@ -57,10 +57,9 @@
   <!-- 메인 영역 -->
   <main class="max-w-7xl mx-auto px-3 md:px-4 py-3 md:py-6 flex-1 w-full overflow-x-hidden">
 
-    <!-- 상단 대제목 영역 (현재 어떤 화면인지 직관적으로 표시) -->
+    <!-- 깔끔해진 상단 단독 대제목 (설명글 완전 제거) -->
     <div class="mb-3 md:mb-5">
-      <h1 id="page-main-title" class="text-lg md:text-2xl font-black text-slate-900 tracking-tight">신규 주문 접수</h1>
-      <p id="page-sub-title" class="text-xs md:text-sm text-slate-500 mt-0.5">카톡 주문서를 자동 분석하거나 대량 엑셀을 일괄 등록합니다.</p>
+      <h1 id="page-main-title" class="text-lg md:text-2xl font-black text-slate-900 tracking-tight">신규 주문</h1>
     </div>
 
     <!-- 1. 신규 주문 탭 -->
@@ -78,10 +77,7 @@
       <!-- [대량 엑셀 접수 모드] -->
       <div id="bulk-order-box" class="toss-card p-4 space-y-3 hidden bg-blue-50/40 border-blue-200">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div>
-            <h3 class="font-extrabold text-sm text-slate-900">대량 다중 배송지 일괄 등록 (사전 검증)</h3>
-            <p class="text-[11px] text-slate-500 mt-0.5">엑셀을 올리면 화면에서 먼저 검증한 뒤 최종 승인 버튼을 눌러 저장합니다.</p>
-          </div>
+          <h3 class="font-extrabold text-sm text-slate-900">대량 다중 배송지 일괄 등록</h3>
           <label class="toss-btn bg-[#3182f6] text-white text-xs font-bold px-3 py-2 rounded-xl cursor-pointer shadow-sm">
             엑셀 파일 업로드 (.xlsx)
             <input type="file" id="bulk-excel-input" accept=".xlsx, .xls" class="hidden" onchange="handleBulkExcelUpload(event)">
@@ -90,7 +86,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-200 text-xs">
           <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">발주 벤더사명 (정산처)</label>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">발주 거래처명 (정산처)</label>
             <input type="text" id="bulk-client-name" placeholder="예: 베러픽, (주)한국유통" class="w-full p-2 border border-slate-200 rounded-lg outline-none font-bold">
           </div>
           <div>
@@ -99,7 +95,6 @@
           </div>
         </div>
 
-        <!-- 2단계 검증 테이블 -->
         <div id="bulk-preview-summary" class="hidden space-y-2">
           <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 text-xs">
             <span class="font-bold text-slate-800">인식된 배송지: <b id="bulk-preview-count" class="text-blue-600">0</b>곳</span>
@@ -149,7 +144,7 @@
           <!-- 좌측 컬럼 -->
           <div class="lg:col-span-7 space-y-3 md:space-y-4">
             
-            <!-- 1. 발주 거래처 -->
+            <!-- 1. 발주 거래처 (과세/면세 라벨 간소화) -->
             <div class="toss-card p-3.5 md:p-5 space-y-2.5">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 class="font-bold text-xs md:text-sm text-slate-800 flex items-center gap-2">
@@ -157,8 +152,8 @@
                   <span id="client-type-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full font-medium"></span>
                 </h3>
                 <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
-                  <button type="button" id="tax-type-taxable" onclick="setTaxType(false)" class="px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs">과세(기본)</button>
-                  <button type="button" id="tax-type-exempt" onclick="setTaxType(true)" class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800">면세(교회 등)</button>
+                  <button type="button" id="tax-type-taxable" onclick="setTaxType(false)" class="px-3 py-1 rounded-md bg-white text-slate-800 shadow-xs">과세</button>
+                  <button type="button" id="tax-type-exempt" onclick="setTaxType(true)" class="px-3 py-1 rounded-md text-slate-500 hover:text-slate-800">면세</button>
                 </div>
               </div>
               
@@ -211,11 +206,11 @@
               </div>
             </div>
 
-            <!-- 3. 품목 & 패킹 가이드 + ★전면 배치된 택배비 입력란★ -->
+            <!-- 3. 품목 & 패킹 가이드 + 택배비 입력란 -->
             <div class="toss-card p-3.5 md:p-5 space-y-2.5">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 class="font-bold text-xs md:text-sm text-slate-800">3. 이번 주문 품목</h3>
-                <span id="tax-mode-indicator" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">과세 주문 (부가세 포함)</span>
+                <span id="tax-mode-indicator" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">과세 (VAT 포함)</span>
               </div>
               
               <div id="active-product-rows" class="space-y-2"></div>
@@ -233,7 +228,7 @@
                 <div id="packing-groups-container" class="space-y-1"></div>
               </div>
 
-              <!-- ★요청하신 품목란 바로 아래 택배비 입력란★ -->
+              <!-- 품목 하단 택배비 결정란 -->
               <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-200 flex justify-between items-center text-xs mt-2">
                 <div>
                   <label class="font-bold text-blue-900 block text-xs">택배비 (배송비) 결정</label>
@@ -309,7 +304,7 @@
 
     </section>
 
-    <!-- 2. 주문 내역 탭 -->
+    <!-- 2. 주문 내역 조회 탭 (정돈된 라벨 & 상품명/수량 중심 카드) -->
     <section id="tab-order-list" class="hidden space-y-3 md:space-y-4">
       <div class="toss-card p-3.5 md:p-4 space-y-3">
         
@@ -326,12 +321,12 @@
           </div>
         </div>
 
-        <!-- 택배 출고 바 -->
+        <!-- 택배 출고 바 ('다운로드' 명칭 변경 반영) -->
         <div class="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 text-xs">
           <div class="flex items-center gap-1.5">
             <span class="font-bold text-slate-700 shrink-0">택배 출력:</span>
             <button onclick="downloadDeliveryFormatExcel(false)" class="toss-btn bg-[#3182f6] text-white px-3 py-1.5 rounded-lg font-bold shadow-xs flex-1 sm:flex-none">
-              CJ 표준 다운로드
+              다운로드
             </button>
             <button onclick="downloadDeliveryFormatExcel(true)" class="toss-btn bg-blue-50 text-[#3182f6] px-2.5 py-1.5 rounded-lg font-semibold flex-1 sm:flex-none">
               품목분리 다운
@@ -346,7 +341,7 @@
         </div>
       </div>
 
-      <!-- 모바일 카드 뷰 -->
+      <!-- 모바일 카드 뷰 (상품명/수량 강조 & 전화번호 슬림화) -->
       <div id="mobile-order-cards" class="md:hidden space-y-2.5"></div>
 
       <!-- PC 와이드 테이블 -->
@@ -357,9 +352,8 @@
               <tr>
                 <th class="p-3">주문일시</th>
                 <th class="p-3">발주처</th>
-                <th class="p-3">수령인 (연락처 / 배송지)</th>
-                <th class="p-3">특이사항(배송메모)</th>
-                <th class="p-3">품목 요약</th>
+                <th class="p-3">수령인 (배송지)</th>
+                <th class="p-3">주문 품목 및 수량</th>
                 <th class="p-3 text-right">총 금액</th>
                 <th class="p-3 text-center">과세/면세</th>
                 <th class="p-3 text-center">입금 여부</th>
@@ -373,7 +367,7 @@
       </div>
     </section>
 
-    <!-- 3. 거래처 CRM 관리 탭 (벤더사 / 직거래 / 경유처 정립) -->
+    <!-- 3. 거래처 및 이력 관리 탭 -->
     <section id="tab-clients" class="hidden space-y-3 md:space-y-4">
       <div class="toss-card p-3.5 md:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
         <div class="relative flex-1 max-w-md">
@@ -458,7 +452,7 @@
     </button>
     <button onclick="switchTab('clients')" id="m-tab-clients" class="flex flex-col items-center py-1 text-slate-400">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-      거래처/CRM
+      거래처/이력
     </button>
     <button onclick="switchTab('analytics')" id="m-tab-analytics" class="flex flex-col items-center py-1 text-slate-400">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -680,8 +674,8 @@
           <div>
             <label class="font-semibold text-slate-500 block mb-0.5">과세 구분</label>
             <select id="edit-client-tax-exempt" class="w-full p-2 border border-slate-200 rounded-xl outline-none bg-white">
-              <option value="false">일반 과세</option>
-              <option value="true">면세 (교회 등)</option>
+              <option value="false">과세</option>
+              <option value="true">면세</option>
             </select>
           </div>
         </div>
@@ -715,7 +709,7 @@
     </div>
   </div>
 
-  <!-- [모달 5] 주문 수정 모달 (기존 내역 완벽 보존 로드) -->
+  <!-- [모달 5] 주문 수정 모달 (2층 구조: 상품명 100% 노출) -->
   <div id="edit-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -825,7 +819,6 @@
       updateSyncStatusUI(false);
       loadSavedImages();
       
-      // F5 새로고침 시 보고 있던 탭 복원
       const savedTab = localStorage.getItem(STORAGE_KEY_ACTIVE_TAB) || 'new-order';
       switchTab(savedTab, false);
 
@@ -834,23 +827,22 @@
       }
     });
 
-    /* 탭 전환 및 상단 타이틀/F5 상태 저장 연동 */
+    /* 타이틀만 직관적으로 표기 (설명글 없음) */
     function switchTab(tabId, saveHistory = true) {
       if (saveHistory) {
         localStorage.setItem(STORAGE_KEY_ACTIVE_TAB, tabId);
       }
 
       const titles = {
-        'new-order': { title: '신규 주문 접수', sub: '카톡 주문서를 자동 분석하거나 대량 엑셀을 일괄 등록합니다.' },
-        'order-list': { title: 'B2B 주문 및 출고 내역', sub: '입금 현황을 체크하고 CJ대한통운 송장 엑셀을 출력합니다.' },
-        'clients': { title: '거래처 및 CRM 고객 관리', sub: '벤더사, 직거래 매장, 벤더 경유 배송처를 체계적으로 관리합니다.' },
-        'analytics': { title: '월간 손익 통계', sub: '총 매출액, 세액, 출고 수량 및 미수금을 한눈에 확인합니다.' },
-        'tax': { title: '세금계산서 집계', sub: '홈택스 일괄 등록용 전자세금계산서 데이터를 관리합니다.' }
+        'new-order': '신규 주문',
+        'order-list': '주문 내역 조회',
+        'clients': '거래처 및 이력 관리',
+        'analytics': '손익 관리',
+        'tax': '세금계산서 집계'
       };
 
       if (titles[tabId]) {
-        document.getElementById('page-main-title').textContent = titles[tabId].title;
-        document.getElementById('page-sub-title').textContent = titles[tabId].sub;
+        document.getElementById('page-main-title').textContent = titles[tabId];
       }
 
       ['new-order', 'order-list', 'clients', 'analytics', 'tax'].forEach(id => {
@@ -942,7 +934,7 @@
 
     function executeBulkSave() {
       const clientName = document.getElementById('bulk-client-name').value.trim();
-      if (!clientName) return alert("발주 벤더사 상호명을 입력해주세요.");
+      if (!clientName) return alert("발주 거래처 상호명을 입력해주세요.");
 
       const prodId = document.getElementById('bulk-common-product').value;
       const product = MASTER_PRODUCTS.find(p => p.id === prodId);
@@ -1047,14 +1039,14 @@
       const indicator = document.getElementById('tax-mode-indicator');
 
       if (isExempt) {
-        btnTaxable.className = 'px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800';
-        btnExempt.className = 'px-2.5 py-1 rounded-md bg-amber-500 text-white shadow-xs font-bold';
-        indicator.textContent = '면세 주문 (부가세 0원)';
+        btnTaxable.className = 'px-3 py-1 rounded-md text-slate-500 hover:text-slate-800';
+        btnExempt.className = 'px-3 py-1 rounded-md bg-amber-500 text-white shadow-xs font-bold';
+        indicator.textContent = '면세';
         indicator.className = 'text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold';
       } else {
-        btnTaxable.className = 'px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs font-bold';
-        btnExempt.className = 'px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800';
-        indicator.textContent = '과세 주문 (부가세 포함)';
+        btnTaxable.className = 'px-3 py-1 rounded-md bg-white text-slate-800 shadow-xs font-bold';
+        btnExempt.className = 'px-3 py-1 rounded-md text-slate-500 hover:text-slate-800';
+        indicator.textContent = '과세 (VAT 포함)';
         indicator.className = 'text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold';
       }
       calculateNewOrderTotals();
@@ -1111,7 +1103,7 @@
       renderActiveProductRows();
     }
 
-    /* 수량 직접 입력 UI 개선 (폭 확대 w-16, 두 자리/세 자리 입력 지원) */
+    /* 단가 강조 및 '기준단가' 라벨 삭제 / 직전단가 표기 유지 */
     function renderActiveProductRows() {
       const container = document.getElementById('active-product-rows');
       if (currentOrderItems.length === 0) {
@@ -1126,32 +1118,31 @@
       }
 
       container.innerHTML = currentOrderItems.map((item, idx) => `
-        <div class="p-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs space-y-1.5">
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
           <div class="flex items-center justify-between">
-            <span class="font-bold text-slate-900 truncate flex-1">${item.name}</span>
+            <span class="font-extrabold text-slate-900 text-sm truncate flex-1">${item.name}</span>
             <button onclick="removeItemRow(${idx})" class="text-slate-300 hover:text-rose-500 font-bold p-1">✕</button>
           </div>
           
-          <div class="flex items-center justify-between gap-1 text-[11px]">
-            <div class="flex items-center gap-1 text-[10px] text-slate-500">
-              <span class="bg-slate-200/70 px-1.5 py-0.5 rounded">기준: ${item.defaultPrice.toLocaleString()}원</span>
-              ${item.lastPrice ? `<span class="bg-blue-100 text-[#3182f6] px-1.5 py-0.5 rounded font-semibold">직전: ${item.lastPrice.toLocaleString()}원</span>` : ''}
+          <div class="flex items-center justify-between gap-1">
+            <div class="flex items-center gap-1">
+              ${item.lastPrice ? `<span class="bg-blue-100 text-[#3182f6] px-1.5 py-0.5 rounded font-bold text-[10px]">직전: ${item.lastPrice.toLocaleString()}원</span>` : ''}
             </div>
 
             <div class="flex items-center gap-1">
-              <span class="text-slate-400 text-[10px]">단가:</span>
-              <input type="number" value="${item.price}" step="100" class="w-20 text-right p-1 bg-white border border-slate-200 rounded-md font-mono font-bold text-xs outline-none" oninput="setItemPriceDirect(${idx}, this.value)">
-              <span class="text-slate-400 text-[10px]">원</span>
+              <span class="text-slate-500 font-bold text-xs">단가:</span>
+              <input type="number" value="${item.price}" step="100" class="w-24 text-right p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-black text-sm text-[#191f28] outline-none focus:ring-2 focus:ring-blue-500" oninput="setItemPriceDirect(${idx}, this.value)">
+              <span class="text-slate-600 font-bold text-xs">원</span>
             </div>
           </div>
 
-          <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
+          <div class="flex items-center justify-between pt-1 border-t border-slate-200/60">
             <div class="flex items-center gap-1.5">
               <button onclick="changeItemQty(${idx}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm">-</button>
               <input type="number" value="${item.qty}" min="1" class="w-16 text-center py-1 bg-white border border-slate-300 rounded-md font-black text-sm text-[#191f28] shadow-xs outline-none focus:ring-2 focus:ring-blue-500" onchange="setItemQtyDirect(${idx}, this.value)">
               <button onclick="changeItemQty(${idx}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm">+</button>
             </div>
-            <div class="font-black text-slate-800 font-mono text-sm">
+            <div class="font-black text-slate-900 font-mono text-sm">
               ${(item.price * item.qty).toLocaleString()}원
             </div>
           </div>
@@ -1228,7 +1219,6 @@
       renderActiveProductRows();
     }
 
-    /* 주소 파싱 정밀화 */
     function parseRawOrderText() {
       if (isCurrentOrderSaved) {
         alert("이미 저장이 완료된 주문입니다. 새로운 주문을 작성하시려면 상단의 [새 주문 작성 (초기화)] 버튼을 눌러주세요.");
@@ -1852,7 +1842,6 @@
       }).catch(err => console.error(err));
     }
 
-    /* 구글 시트 데이터 로드 및 역파싱 */
     function fetchLatestFromGoogleSheet(isManual = false) {
       if (!config.sheetUrl) return;
       
@@ -1867,7 +1856,6 @@
           if (data) {
             if (data.orders && data.orders.length > 0) {
               orders = data.orders.map(o => {
-                // 품목 상세가 없는 주문은 품목요약 문자열에서 역파싱하여 보정
                 if (!o.items || o.items.length === 0) {
                   o.items = [];
                   MASTER_PRODUCTS.forEach(mp => {
@@ -2033,6 +2021,7 @@
       reader.readAsArrayBuffer(file);
     }
 
+    /* 주문 내역 카드: 상품명/수량 강조 & 전화번호 슬림화 */
     function renderOrdersTable() {
       const search = (document.getElementById('order-search-input')?.value || '').toLowerCase();
       
@@ -2055,6 +2044,7 @@
         return true;
       });
 
+      // 모바일 카드 뷰
       const mobileContainer = document.getElementById('mobile-order-cards');
       if (filtered.length === 0) {
         mobileContainer.innerHTML = '<div class="toss-card p-6 text-center text-xs text-slate-400">주문 내역이 없습니다.</div>';
@@ -2063,7 +2053,7 @@
           <div onclick="openOrderDrawer('${o.id}')" class="toss-card p-3.5 space-y-2 active:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
             <div class="flex justify-between items-start">
               <div>
-                <span class="font-bold text-sm text-slate-900">${o.clientName}</span>
+                <span class="font-extrabold text-sm text-slate-900">${o.clientName}</span>
                 <span class="text-xs text-slate-500">(${o.receiverName})</span>
                 ${o.isTaxExempt ? '<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black ml-1">면세</span>' : ''}
                 <div class="text-[10px] text-slate-400 font-mono">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</div>
@@ -2078,23 +2068,23 @@
               </div>
             </div>
 
-            ${o.receiverPhone ? `
-              <div class="flex items-center gap-1.5 text-xs" onclick="event.stopPropagation()">
-                <span class="text-slate-400 text-[11px]">수령인:</span>
-                <a href="tel:${o.receiverPhone}" class="text-blue-600 font-mono font-bold hover:underline flex items-center gap-1">
-                  📞 ${o.receiverPhone}
-                </a>
-              </div>
-            ` : ''}
-
-            <div class="bg-slate-50 p-2 rounded-xl text-xs space-y-1">
-              <div class="text-slate-700 font-semibold truncate">${o.itemsSummary}</div>
-              <div class="text-slate-400 text-[11px] truncate">${o.receiverAddress}</div>
-              ${o.memo ? `<div class="text-[11px] text-amber-700 bg-amber-50 p-1 rounded font-medium">🚚 특이사항: ${o.memo}</div>` : ''}
+            <!-- 주문 품목 및 수량 강조 -->
+            <div class="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 text-xs space-y-1">
+              <div class="text-blue-900 font-bold text-sm">${o.itemsSummary}</div>
+              <div class="text-slate-500 text-[11px] truncate">${o.receiverAddress}</div>
+              ${o.memo ? `<div class="text-[11px] text-amber-700 bg-amber-50 p-1 rounded font-medium">🚚 ${o.memo}</div>` : ''}
             </div>
 
+            <!-- 하단 정보: 송장상태 및 작게 들어간 연락처 -->
             <div class="flex justify-between items-center text-[10px] pt-0.5 text-slate-400">
-              <span>송장: <b class="text-slate-700 font-mono">${o.trackingNo || '미등록'}</b></span>
+              <div class="flex items-center gap-2">
+                <span>송장: <b class="text-slate-700 font-mono">${o.trackingNo || '미등록'}</b></span>
+                ${o.receiverPhone ? `
+                  <a href="tel:${o.receiverPhone}" onclick="event.stopPropagation()" class="text-blue-600 font-mono font-medium hover:underline flex items-center gap-0.5">
+                    📞 ${o.receiverPhone}
+                  </a>
+                ` : ''}
+              </div>
               <span class="px-2 py-0.5 rounded-full font-semibold ${
                 o.status === '접수완료' ? 'bg-blue-50 text-blue-600' :
                 o.status === '주문변경' ? 'bg-amber-50 text-amber-600' :
@@ -2105,9 +2095,10 @@
         `).join('');
       }
 
+      // PC 와이드 테이블
       const tbody = document.getElementById('orders-table-body');
       tbody.innerHTML = filtered.length === 0 ? 
-        '<tr><td colspan="10" class="p-8 text-center text-slate-400">주문 내역이 없습니다.</td></tr>' :
+        '<tr><td colspan="9" class="p-8 text-center text-slate-400">주문 내역이 없습니다.</td></tr>' :
         filtered.map(o => `
           <tr class="hover:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
             <td class="p-3 font-mono text-[11px] text-slate-500" onclick="openOrderDrawer('${o.id}')">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</td>
@@ -2115,14 +2106,11 @@
             <td class="p-3" onclick="event.stopPropagation()">
               <div class="font-medium text-slate-800 flex items-center gap-1.5">
                 <span>${o.receiverName}</span>
-                ${o.receiverPhone ? `<a href="tel:${o.receiverPhone}" class="text-blue-600 font-mono hover:underline font-bold">(${o.receiverPhone})</a>` : ''}
+                ${o.receiverPhone ? `<a href="tel:${o.receiverPhone}" class="text-blue-600 font-mono hover:underline font-normal text-[11px]">(${o.receiverPhone})</a>` : ''}
               </div>
               <div class="text-[10px] text-slate-400 truncate max-w-xs">${o.receiverAddress}</div>
             </td>
-            <td class="p-3 text-slate-600 truncate max-w-xs" onclick="openOrderDrawer('${o.id}')">
-              ${o.memo ? `<span class="bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded text-[11px] font-medium">${o.memo}</span>` : '-'}
-            </td>
-            <td class="p-3 text-slate-600 truncate max-w-xs" onclick="openOrderDrawer('${o.id}')">${o.itemsSummary}</td>
+            <td class="p-3 font-bold text-slate-900 truncate max-w-xs" onclick="openOrderDrawer('${o.id}')">${o.itemsSummary}</td>
             <td class="p-3 text-right font-black text-slate-900" onclick="openOrderDrawer('${o.id}')">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</td>
             <td class="p-3 text-center" onclick="openOrderDrawer('${o.id}')">
               <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.isTaxExempt ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'}">${o.isTaxExempt ? '면세' : '과세'}</span>
@@ -2300,22 +2288,17 @@
       }
     }
 
-    /* 거래처 CRM 목록: 벤더사 vs 직거래 vs 벤더경유 정립 & JSON 메모 노출 차단 필터 */
+    /* 거래처 및 이력 관리 렌더러 */
     function renderClientsList() {
       const container = document.getElementById('clients-cards-container');
       const search = (document.getElementById('client-search-box')?.value || '').toLowerCase();
       
       const entityMap = new Map();
-
-      // 벤더사 판별 목록 (여러 곳으로 배송을 분기 발주하는 유통사)
       const vendorNames = ['베러픽', '한국유통'];
 
       clients.forEach(c => {
         let cleanMemo = c.memo || '';
-        // 시스템 내부 단가 JSON({"P09":...})이 특이사항에 노출되지 않도록 필터링
-        if (cleanMemo.startsWith('{') && cleanMemo.includes('}')) {
-          cleanMemo = '';
-        }
+        if (cleanMemo.startsWith('{') && cleanMemo.includes('}')) cleanMemo = '';
 
         const isVendor = vendorNames.includes(c.name);
 
@@ -2765,7 +2748,7 @@
       document.getElementById('badge-total-orders').textContent = orders.length;
     }
 
-    /* 주문 수정 모달: 기존 품목 역파싱 연동 및 100% 로드 보장 */
+    /* 주문 수정 모달 (2층 구조: 상품명 100% 노출) */
     function openEditOrderModal() {
       const order = orders.find(o => o.id === currentSelectedOrderId);
       if (!order) return;
@@ -2788,16 +2771,25 @@
         }
 
         return `
-          <div class="flex items-center justify-between text-xs p-2.5 ${existQty > 0 ? 'bg-blue-50/70 border border-blue-200' : 'bg-slate-50'} rounded-xl">
-            <div class="flex-1 min-w-0 pr-1">
-              <span class="font-bold text-slate-800 block truncate">${p.name}</span>
-              ${existQty > 0 ? '<span class="text-[10px] text-blue-600 font-bold">● 현재 주문 담김</span>' : ''}
+          <div class="p-2.5 ${existQty > 0 ? 'bg-blue-50/70 border border-blue-200' : 'bg-slate-50 border border-slate-100'} rounded-xl space-y-1.5">
+            <!-- 1층: 긴 상품명도 100% 온전하게 노출 -->
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-slate-800 text-xs">${p.name}</span>
+              ${existQty > 0 ? '<span class="text-[10px] text-blue-600 font-bold bg-blue-100/70 px-1.5 py-0.5 rounded">현재 담김</span>' : ''}
             </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <input type="number" id="edit-price-${p.id}" value="${existPrice}" class="w-18 p-1 border rounded text-right font-mono text-xs">
-              <span class="text-[10px] text-slate-400">원</span>
-              <input type="number" id="edit-qty-${p.id}" value="${existQty}" min="0" class="w-14 p-1 border rounded text-center font-black text-xs text-blue-600">
-              <span class="text-[10px] text-slate-400">개</span>
+            
+            <!-- 2층: 큼직한 단가 및 수량 입력란 -->
+            <div class="flex items-center justify-between pt-0.5">
+              <div class="flex items-center gap-1">
+                <span class="text-[11px] text-slate-500 font-bold">단가:</span>
+                <input type="number" id="edit-price-${p.id}" value="${existPrice}" class="w-20 p-1 border border-slate-300 rounded text-right font-mono font-bold text-xs bg-white">
+                <span class="text-[10px] text-slate-400">원</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="text-[11px] text-slate-500 font-bold">수량:</span>
+                <input type="number" id="edit-qty-${p.id}" value="${existQty}" min="0" class="w-14 p-1 border border-slate-300 rounded text-center font-black text-xs text-blue-600 bg-white">
+                <span class="text-[10px] text-slate-400">개</span>
+              </div>
             </div>
           </div>
         `;
