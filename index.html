@@ -57,7 +57,7 @@
   <!-- 메인 영역 -->
   <main class="max-w-7xl mx-auto px-3 md:px-4 py-3 md:py-6 flex-1 w-full overflow-x-hidden">
 
-    <!-- 상단 대제목 (설명글 없음) -->
+    <!-- 상단 대제목 -->
     <div class="mb-3 md:mb-5">
       <h1 id="page-main-title" class="text-lg md:text-2xl font-black text-slate-900 tracking-tight">신규 주문</h1>
     </div>
@@ -65,7 +65,7 @@
     <!-- 1. 신규 주문 탭 -->
     <section id="tab-new-order" class="space-y-3 md:space-y-6">
       
-      <!-- 모드 선택 -->
+      <!-- 접수 모드 선택 바 -->
       <div class="flex justify-between items-center bg-white p-2.5 rounded-2xl border border-slate-200">
         <span class="text-xs font-bold text-slate-700">접수 모드:</span>
         <div class="flex gap-1.5">
@@ -206,7 +206,7 @@
               </div>
             </div>
 
-            <!-- 3. 품목 & 패킹 가이드 + 전면 배치된 택배비 입력란 -->
+            <!-- 3. 품목 & 패킹 가이드 + 택배비 입력란 -->
             <div class="toss-card p-3.5 md:p-5 space-y-2.5">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 class="font-bold text-xs md:text-sm text-slate-800">3. 이번 주문 품목</h3>
@@ -228,7 +228,7 @@
                 <div id="packing-groups-container" class="space-y-1"></div>
               </div>
 
-              <!-- 품목 하단 즉시 결정 택배비 입력란 -->
+              <!-- 품목 하단 택배비 결정란 -->
               <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-200 flex justify-between items-center text-xs mt-2">
                 <div>
                   <label class="font-bold text-blue-900 block text-xs">택배비 (배송비) 결정</label>
@@ -248,7 +248,7 @@
 
           </div>
 
-          <!-- 우측 컬럼: 최종 결제 확인 & 카톡 답장 -->
+          <!-- 우측 컬럼 -->
           <div class="lg:col-span-5 space-y-3 md:space-y-4">
             
             <div class="toss-card p-4 md:p-5 bg-[#191f28] text-white space-y-3">
@@ -302,7 +302,7 @@
 
     </section>
 
-    <!-- 2. 주문 내역 조회 탭 (체크박스 선택 & 계산서 발행 토글 탑재) -->
+    <!-- 2. 주문 내역 조회 탭 -->
     <section id="tab-order-list" class="hidden space-y-3 md:space-y-4">
       <div class="toss-card p-3.5 md:p-4 space-y-3">
         
@@ -435,7 +435,7 @@
 
   </main>
 
-  <!-- ★하단 고정 플로팅 액션 바 (주문 체크 시 부드럽게 등장)★ -->
+  <!-- 하단 고정 플로팅 액션 바 -->
   <aside id="floating-action-bar" class="fixed bottom-16 md:bottom-6 left-3 right-3 max-w-xl mx-auto bg-[#191f28]/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl flex items-center justify-between z-40 transition-all duration-300 transform translate-y-28 opacity-0 pointer-events-none">
     <div class="flex items-center gap-2">
       <span class="bg-[#3182f6] text-white text-xs font-black px-2.5 py-1 rounded-full" id="floating-selected-count">0건</span>
@@ -452,7 +452,7 @@
     </div>
   </aside>
 
-  <!-- 하단 모바일 바 -->
+  <!-- 하단 모바일 네비 바 -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 flex justify-around items-center z-30 shadow-lg text-[10px]">
     <button onclick="switchTab('new-order')" id="m-tab-new-order" class="flex flex-col items-center py-1 text-[#3182f6] font-bold">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -597,7 +597,6 @@
         <button id="drawer-toggle-payment-btn" onclick="togglePaymentStatusInDrawer()" class="toss-btn px-3 py-1 rounded-full text-xs font-bold transition"></button>
       </div>
       
-      <!-- 세금계산서 발행 상태 토글 -->
       <div class="flex items-center justify-between">
         <span class="font-semibold text-slate-500">세금계산서 발행</span>
         <button id="drawer-toggle-tax-invoice-btn" onclick="toggleTaxInvoiceStatusInDrawer()" class="toss-btn px-3 py-1 rounded-full text-xs font-bold transition"></button>
@@ -833,7 +832,7 @@
     let listFilter = 'all';
     let activeClientObj = null;
     let parsedBulkRows = [];
-    let selectedOrderIds = new Set(); // 체크박스 선택된 주문 ID 집합
+    let selectedOrderIds = new Set();
 
     window.addEventListener('DOMContentLoaded', () => {
       initProductModalList();
@@ -1100,7 +1099,6 @@
       document.getElementById('product-select-modal').classList.add('hidden');
     }
 
-    /* ★주문 이력 직접 역추적을 통한 품목별 최신 공급단가 획득 함수★ */
     function getLatestPriceForProduct(clientName, productId) {
       if (!clientName) return null;
       for (let i = 0; i < orders.length; i++) {
@@ -1142,7 +1140,6 @@
       renderActiveProductRows();
     }
 
-    /* 단가 강조 및 직전단가 뱃지 노출 */
     function renderActiveProductRows() {
       const container = document.getElementById('active-product-rows');
       if (currentOrderItems.length === 0) {
@@ -1475,7 +1472,6 @@
 
       setTaxType(Boolean(client.isTaxExempt));
 
-      // 과거 주문 DB에서 배송지 이력 실시간 추출
       const pastAddresses = [];
       orders.forEach(o => {
         if (o.clientName.trim().toLowerCase() === client.name.trim().toLowerCase() && o.receiverAddress) {
@@ -1498,7 +1494,6 @@
         recentBox.classList.add('hidden');
       }
 
-      // 품목별 실시간 직전 단가 재매핑
       currentOrderItems.forEach(it => {
         const lp = getLatestPriceForProduct(client.name, it.id);
         if (lp) {
@@ -1688,7 +1683,7 @@
             try {
               const item = new ClipboardItem({ "image/png": blob });
               navigator.clipboard.write([item]).then(() => {
-                alert("거래명세표 이미지가 클립보드에 복사되었습니다! (카톡에 바로 붙여넣기 하세요)");
+                alert("거래명세표 이미지가 클립보드에 복사되었습니다!");
               }).catch(() => downloadInvoiceImage(elementId));
             } catch (e) {
               downloadInvoiceImage(elementId);
@@ -1886,8 +1881,8 @@
       
       const spinner = document.getElementById('sync-spinner');
       const statusText = document.getElementById('sync-status-text');
-      spinner.classList.add('animate-spin');
-      statusText.textContent = '동기화중';
+      if (spinner) spinner.classList.add('animate-spin');
+      if (statusText) statusText.textContent = '동기화중';
 
       fetch(config.sheetUrl)
         .then(res => res.json())
@@ -1938,21 +1933,26 @@
               initBulkCommonProducts();
             }
 
-            statusText.textContent = '동기화완료';
-            document.getElementById('sync-status').className = 'toss-btn text-[10px] md:text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium flex items-center gap-1';
+            if (statusText) statusText.textContent = '동기화완료';
+            const syncBtn = document.getElementById('sync-status');
+            if (syncBtn) syncBtn.className = 'toss-btn text-[10px] md:text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium flex items-center gap-1';
             if (isManual) alert("구글 시트의 최신 데이터와 완벽하게 동기화되었습니다!");
           }
         })
         .catch(err => {
-          statusText.textContent = '로컬저장';
-          document.getElementById('sync-status').className = 'toss-btn text-[10px] md:text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium flex items-center gap-1';
+          if (statusText) statusText.textContent = '로컬저장';
+          const syncBtn = document.getElementById('sync-status');
+          if (syncBtn) syncBtn.className = 'toss-btn text-[10px] md:text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium flex items-center gap-1';
         })
-        .finally(() => spinner.classList.remove('animate-spin'));
+        .finally(() => {
+          if (spinner) spinner.classList.remove('animate-spin');
+        });
     }
 
     function updateSyncStatusUI(isConnected) {
       const el = document.getElementById('sync-status');
       const text = document.getElementById('sync-status-text');
+      if (!el || !text) return;
       if (config.sheetUrl) {
         text.textContent = isConnected ? '동기화완료' : '시트연결됨';
         el.className = 'toss-btn text-[10px] md:text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium flex items-center gap-1';
@@ -1962,7 +1962,6 @@
       }
     }
 
-    /* ★체크박스 선택 기반 택배 엑셀 다운로드 (상품명/수량 완벽 분리)★ */
     function downloadSelectedDeliveryExcel(splitByItem = false) {
       if (selectedOrderIds.size === 0) return alert("다운로드할 주문을 먼저 체크박스로 선택해주세요.");
 
@@ -2063,7 +2062,6 @@
       reader.readAsArrayBuffer(file);
     }
 
-    /* 체크박스 선택 제어 및 하단 플로팅 바 갱신 */
     function toggleOrderSelection(orderId, checked) {
       if (checked) selectedOrderIds.add(orderId);
       else selectedOrderIds.delete(orderId);
@@ -2071,7 +2069,6 @@
     }
 
     function toggleSelectAllOrders(checked) {
-      const search = (document.getElementById('order-search-input')?.value || '').toLowerCase();
       let filtered = orders.filter(o => o.status !== '주문취소');
       if (listFilter === 'unpaid') filtered = filtered.filter(o => o.paymentStatus !== 'paid');
       if (listFilter === 'paid') filtered = filtered.filter(o => o.paymentStatus === 'paid');
@@ -2096,8 +2093,9 @@
       const bar = document.getElementById('floating-action-bar');
       const countEl = document.getElementById('floating-selected-count');
       const count = selectedOrderIds.size;
+      if (!bar || !countEl) return;
+      
       countEl.textContent = `${count}건`;
-
       if (count > 0) {
         bar.classList.remove('translate-y-28', 'opacity-0', 'pointer-events-none');
       } else {
@@ -2105,14 +2103,16 @@
       }
     }
 
-    /* 주문 내역 렌더러 (계산서 발행 토글 및 체크박스 탑재) */
     function renderOrdersTable() {
       const search = (document.getElementById('order-search-input')?.value || '').toLowerCase();
       
       const validOrders = orders.filter(o => o.status !== '주문취소');
-      document.getElementById('count-filter-all').textContent = validOrders.length;
-      document.getElementById('count-filter-unpaid').textContent = validOrders.filter(o => o.paymentStatus !== 'paid').length;
-      document.getElementById('count-filter-paid').textContent = validOrders.filter(o => o.paymentStatus === 'paid').length;
+      const countAll = document.getElementById('count-filter-all');
+      const countUnpaid = document.getElementById('count-filter-unpaid');
+      const countPaid = document.getElementById('count-filter-paid');
+      if (countAll) countAll.textContent = validOrders.length;
+      if (countUnpaid) countUnpaid.textContent = validOrders.filter(o => o.paymentStatus !== 'paid').length;
+      if (countPaid) countPaid.textContent = validOrders.filter(o => o.paymentStatus === 'paid').length;
 
       let filtered = orders.filter(o => {
         if (listFilter === 'unpaid' && o.paymentStatus === 'paid') return false;
@@ -2128,119 +2128,121 @@
         return true;
       });
 
-      // 모바일 카드 뷰
       const mobileContainer = document.getElementById('mobile-order-cards');
-      if (filtered.length === 0) {
-        mobileContainer.innerHTML = '<div class="toss-card p-6 text-center text-xs text-slate-400">주문 내역이 없습니다.</div>';
-      } else {
-        mobileContainer.innerHTML = filtered.map(o => `
-          <div onclick="openOrderDrawer('${o.id}')" class="toss-card p-3.5 space-y-2 active:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
-            <div class="flex justify-between items-start">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6]">
-                <div>
-                  <span class="font-extrabold text-sm text-slate-900">${o.clientName}</span>
-                  <span class="text-xs text-slate-500">(${o.receiverName})</span>
-                  ${o.isTaxExempt ? '<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black ml-1">면세</span>' : ''}
-                  <div class="text-[10px] text-slate-400 font-mono">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</div>
+      if (mobileContainer) {
+        if (filtered.length === 0) {
+          mobileContainer.innerHTML = '<div class="toss-card p-6 text-center text-xs text-slate-400">주문 내역이 없습니다.</div>';
+        } else {
+          mobileContainer.innerHTML = filtered.map(o => `
+            <div onclick="openOrderDrawer('${o.id}')" class="toss-card p-3.5 space-y-2 active:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
+              <div class="flex justify-between items-start">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6]">
+                  <div>
+                    <span class="font-extrabold text-sm text-slate-900">${o.clientName}</span>
+                    <span class="text-xs text-slate-500">(${o.receiverName})</span>
+                    ${o.isTaxExempt ? '<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black ml-1">면세</span>' : ''}
+                    <div class="text-[10px] text-slate-400 font-mono">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-black text-sm text-[#191f28]">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</div>
+                  <div class="flex gap-1 justify-end mt-1" onclick="event.stopPropagation()">
+                    <button onclick="togglePaymentStatusInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      o.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                    }">
+                      ${o.paymentStatus === 'paid' ? '입금완료' : '미입금'}
+                    </button>
+                    <button onclick="toggleTaxInvoiceInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      o.taxInvoiceStatus === 'issued' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
+                    }">
+                      ${o.taxInvoiceStatus === 'issued' ? '계산서 발행' : '계산서 미발행'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="text-right">
-                <div class="font-black text-sm text-[#191f28]">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</div>
-                <div class="flex gap-1 justify-end mt-1" onclick="event.stopPropagation()">
-                  <button onclick="togglePaymentStatusInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    o.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                  }">
-                    ${o.paymentStatus === 'paid' ? '입금완료' : '미입금'}
-                  </button>
-                  <button onclick="toggleTaxInvoiceInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    o.taxInvoiceStatus === 'issued' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
-                  }">
-                    ${o.taxInvoiceStatus === 'issued' ? '계산서 발행' : '계산서 미발행'}
-                  </button>
+
+              <div class="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 text-xs space-y-1">
+                <div class="text-blue-900 font-bold text-sm">${o.itemsSummary}</div>
+                <div class="text-slate-500 text-[11px] truncate">${o.receiverAddress}</div>
+                ${o.memo ? `<div class="text-[11px] text-amber-700 bg-amber-50 p-1 rounded font-medium">🚚 ${o.memo}</div>` : ''}
+              </div>
+
+              <div class="flex justify-between items-center text-[10px] pt-0.5 text-slate-400">
+                <div class="flex items-center gap-2">
+                  <span>송장: <b class="text-slate-700 font-mono">${o.trackingNo || '미등록'}</b></span>
+                  ${o.receiverPhone ? `
+                    <a href="tel:${o.receiverPhone}" onclick="event.stopPropagation()" class="text-blue-600 font-mono font-medium hover:underline flex items-center gap-0.5">
+                      📞 ${o.receiverPhone}
+                    </a>
+                  ` : ''}
                 </div>
+                <span class="px-2 py-0.5 rounded-full font-semibold ${
+                  o.status === '접수완료' ? 'bg-blue-50 text-blue-600' :
+                  o.status === '주문변경' ? 'bg-amber-50 text-amber-600' :
+                  o.status === '발송완료' ? 'bg-slate-100 text-slate-600' : 'bg-red-50 text-red-400'
+                }">${o.status}</span>
               </div>
             </div>
-
-            <!-- 주문 품목 및 수량 강조 -->
-            <div class="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 text-xs space-y-1">
-              <div class="text-blue-900 font-bold text-sm">${o.itemsSummary}</div>
-              <div class="text-slate-500 text-[11px] truncate">${o.receiverAddress}</div>
-              ${o.memo ? `<div class="text-[11px] text-amber-700 bg-amber-50 p-1 rounded font-medium">🚚 ${o.memo}</div>` : ''}
-            </div>
-
-            <div class="flex justify-between items-center text-[10px] pt-0.5 text-slate-400">
-              <div class="flex items-center gap-2">
-                <span>송장: <b class="text-slate-700 font-mono">${o.trackingNo || '미등록'}</b></span>
-                ${o.receiverPhone ? `
-                  <a href="tel:${o.receiverPhone}" onclick="event.stopPropagation()" class="text-blue-600 font-mono font-medium hover:underline flex items-center gap-0.5">
-                    📞 ${o.receiverPhone}
-                  </a>
-                ` : ''}
-              </div>
-              <span class="px-2 py-0.5 rounded-full font-semibold ${
-                o.status === '접수완료' ? 'bg-blue-50 text-blue-600' :
-                o.status === '주문변경' ? 'bg-amber-50 text-amber-600' :
-                o.status === '발송완료' ? 'bg-slate-100 text-slate-600' : 'bg-red-50 text-red-400'
-              }">${o.status}</span>
-            </div>
-          </div>
-        `).join('');
+          `).join('');
+        }
       }
 
-      // PC 와이드 테이블
       const tbody = document.getElementById('orders-table-body');
-      tbody.innerHTML = filtered.length === 0 ? 
-        '<tr><td colspan="11" class="p-8 text-center text-slate-400">주문 내역이 없습니다.</td></tr>' :
-        filtered.map(o => `
-          <tr class="hover:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
-            <td class="p-3 text-center" onclick="event.stopPropagation()">
-              <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onchange="toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6]">
-            </td>
-            <td class="p-3 font-mono text-[11px] text-slate-500" onclick="openOrderDrawer('${o.id}')">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</td>
-            <td class="p-3 font-bold text-slate-800" onclick="openOrderDrawer('${o.id}')">${o.clientName}</td>
-            <td class="p-3" onclick="event.stopPropagation()">
-              <div class="font-medium text-slate-800 flex items-center gap-1.5">
-                <span>${o.receiverName}</span>
-                ${o.receiverPhone ? `<a href="tel:${o.receiverPhone}" class="text-blue-600 font-mono hover:underline font-normal text-[11px]">(${o.receiverPhone})</a>` : ''}
-              </div>
-              <div class="text-[10px] text-slate-400 truncate max-w-xs">${o.receiverAddress}</div>
-            </td>
-            <td class="p-3 font-bold text-slate-900 truncate max-w-xs" onclick="openOrderDrawer('${o.id}')">${o.itemsSummary}</td>
-            <td class="p-3 text-right font-black text-slate-900" onclick="openOrderDrawer('${o.id}')">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</td>
-            <td class="p-3 text-center" onclick="openOrderDrawer('${o.id}')">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.isTaxExempt ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'}">${o.isTaxExempt ? '면세' : '과세'}</span>
-            </td>
-            <td class="p-3 text-center" onclick="event.stopPropagation()">
-              <button onclick="togglePaymentStatusInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                o.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-              }">
-                ${o.paymentStatus === 'paid' ? '입금완료' : '미입금'}
-              </button>
-            </td>
-            <td class="p-3 text-center" onclick="event.stopPropagation()">
-              <button onclick="toggleTaxInvoiceInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                o.taxInvoiceStatus === 'issued' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
-              }">
-                ${o.taxInvoiceStatus === 'issued' ? '발행완료' : '미발행'}
-              </button>
-            </td>
-            <td class="p-3 text-center" onclick="openOrderDrawer('${o.id}')">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                o.status === '접수완료' ? 'bg-blue-50 text-blue-600' :
-                o.status === '주문변경' ? 'bg-amber-50 text-amber-600' :
-                o.status === '발송완료' ? 'bg-slate-100 text-slate-600' : 'bg-red-50 text-red-400'
-              }">${o.status}</span>
-            </td>
-            <td class="p-3 text-center font-mono text-slate-600" onclick="openOrderDrawer('${o.id}')">${o.trackingNo || '-'}</td>
-          </tr>
-        `).join('');
+      if (tbody) {
+        tbody.innerHTML = filtered.length === 0 ? 
+          '<tr><td colspan="11" class="p-8 text-center text-slate-400">주문 내역이 없습니다.</td></tr>' :
+          filtered.map(o => `
+            <tr class="hover:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-50 line-through' : ''}">
+              <td class="p-3 text-center" onclick="event.stopPropagation()">
+                <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onchange="toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6]">
+              </td>
+              <td class="p-3 font-mono text-[11px] text-slate-500" onclick="openOrderDrawer('${o.id}')">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</td>
+              <td class="p-3 font-bold text-slate-800" onclick="openOrderDrawer('${o.id}')">${o.clientName}</td>
+              <td class="p-3" onclick="event.stopPropagation()">
+                <div class="font-medium text-slate-800 flex items-center gap-1.5">
+                  <span>${o.receiverName}</span>
+                  ${o.receiverPhone ? `<a href="tel:${o.receiverPhone}" class="text-blue-600 font-mono hover:underline font-normal text-[11px]">(${o.receiverPhone})</a>` : ''}
+                </div>
+                <div class="text-[10px] text-slate-400 truncate max-w-xs">${o.receiverAddress}</div>
+              </td>
+              <td class="p-3 font-bold text-slate-900 truncate max-w-xs" onclick="openOrderDrawer('${o.id}')">${o.itemsSummary}</td>
+              <td class="p-3 text-right font-black text-slate-900" onclick="openOrderDrawer('${o.id}')">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</td>
+              <td class="p-3 text-center" onclick="openOrderDrawer('${o.id}')">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.isTaxExempt ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'}">${o.isTaxExempt ? '면세' : '과세'}</span>
+              </td>
+              <td class="p-3 text-center" onclick="event.stopPropagation()">
+                <button onclick="togglePaymentStatusInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  o.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                }">
+                  ${o.paymentStatus === 'paid' ? '입금완료' : '미입금'}
+                </button>
+              </td>
+              <td class="p-3 text-center" onclick="event.stopPropagation()">
+                <button onclick="toggleTaxInvoiceInline('${o.id}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  o.taxInvoiceStatus === 'issued' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
+                }">
+                  ${o.taxInvoiceStatus === 'issued' ? '발행완료' : '미발행'}
+                </button>
+              </td>
+              <td class="p-3 text-center" onclick="openOrderDrawer('${o.id}')">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                  o.status === '접수완료' ? 'bg-blue-50 text-blue-600' :
+                  o.status === '주문변경' ? 'bg-amber-50 text-amber-600' :
+                  o.status === '발송완료' ? 'bg-slate-100 text-slate-600' : 'bg-red-50 text-red-400'
+                }">${o.status}</span>
+              </td>
+              <td class="p-3 text-center font-mono text-slate-600" onclick="openOrderDrawer('${o.id}')">${o.trackingNo || '-'}</td>
+            </tr>
+          `).join('');
+      }
     }
 
     function setListFilter(filter) {
       listFilter = filter;
       ['all', 'unpaid', 'paid'].forEach(f => {
         const btn = document.getElementById(`filter-btn-${f}`);
+        if (!btn) return;
         if (f === filter) btn.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white shadow-xs text-slate-800 font-bold';
         else btn.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 font-medium';
       });
@@ -2353,6 +2355,7 @@
 
       ['order', 'shipping', 'unpaid'].forEach(t => {
         const btn = document.getElementById(`drawer-msg-tab-${t}`);
+        if (!btn) return;
         if (t === tab) btn.className = 'px-2 py-1 rounded-md bg-slate-800 text-white font-bold';
         else btn.className = 'px-2 py-1 rounded-md bg-slate-100 text-slate-600';
       });
@@ -2419,10 +2422,10 @@
       }
     }
 
-    /* 거래처 및 이력 관리 렌더러 */
     function renderClientsList() {
       const container = document.getElementById('clients-cards-container');
       const search = (document.getElementById('client-search-box')?.value || '').toLowerCase();
+      if (!container) return;
       
       const entityMap = new Map();
 
@@ -2502,7 +2505,8 @@
         (e.memo && e.memo.toLowerCase().includes(search))
       );
 
-      document.getElementById('clients-count').textContent = filtered.length;
+      const countEl = document.getElementById('clients-count');
+      if (countEl) countEl.textContent = filtered.length;
 
       if (filtered.length === 0) {
         container.innerHTML = '<div class="col-span-full toss-card p-6 text-center text-xs text-slate-400">검색된 거래처/배송처가 없습니다.</div>';
@@ -2709,7 +2713,7 @@
       const bizImg = localStorage.getItem(STORAGE_KEY_BIZ_IMG);
       const bizBox = document.getElementById('company-biz-preview-box');
       const bizBtn = document.getElementById('btn-share-biz-img');
-      if (bizImg) {
+      if (bizImg && bizBox && bizBtn) {
         bizBox.innerHTML = `<img src="${bizImg}" class="max-h-full max-w-full object-contain">`;
         bizBtn.classList.remove('hidden');
       }
@@ -2717,7 +2721,7 @@
       const cardImg = localStorage.getItem(STORAGE_KEY_CARD_IMG);
       const cardBox = document.getElementById('company-card-preview-box');
       const cardBtn = document.getElementById('btn-share-card-img');
-      if (cardImg) {
+      if (cardImg && cardBox && cardBtn) {
         cardBox.innerHTML = `<img src="${cardImg}" class="max-h-full max-w-full object-contain">`;
         cardBtn.classList.remove('hidden');
       }
@@ -2725,7 +2729,7 @@
       const quoteImg = localStorage.getItem(STORAGE_KEY_QUOTE_IMG);
       const quoteBox = document.getElementById('company-quote-preview-box');
       const quoteBtn = document.getElementById('btn-share-quote-img');
-      if (quoteImg) {
+      if (quoteImg && quoteBox && quoteBtn) {
         quoteBox.innerHTML = `<img src="${quoteImg}" class="max-h-full max-w-full object-contain">`;
         quoteBtn.classList.remove('hidden');
       }
@@ -2762,6 +2766,7 @@
 
     function renderTaxTable() {
       const tbody = document.getElementById('tax-table-body');
+      if (!tbody) return;
       const valid = orders.filter(o => o.status !== '주문취소');
       const grouped = {};
 
@@ -2840,18 +2845,24 @@
         }
       });
 
-      document.getElementById('stat-monthly-sales').textContent = `${monthlySupply.toLocaleString()}원`;
-      document.getElementById('stat-monthly-vat').textContent = `${monthlyVat.toLocaleString()}원`;
-      document.getElementById('stat-monthly-qty').textContent = `${totalQty.toLocaleString()}개`;
-      document.getElementById('stat-unpaid-total').textContent = `${unpaidTotal.toLocaleString()}원`;
+      const salesEl = document.getElementById('stat-monthly-sales');
+      const vatEl = document.getElementById('stat-monthly-vat');
+      const qtyEl = document.getElementById('stat-monthly-qty');
+      const unpaidEl = document.getElementById('stat-unpaid-total');
+      if (salesEl) salesEl.textContent = `${monthlySupply.toLocaleString()}원`;
+      if (vatEl) vatEl.textContent = `${monthlyVat.toLocaleString()}원`;
+      if (qtyEl) qtyEl.textContent = `${totalQty.toLocaleString()}개`;
+      if (unpaidEl) unpaidEl.textContent = `${unpaidTotal.toLocaleString()}원`;
 
       const prodContainer = document.getElementById('analytics-product-summary');
-      prodContainer.innerHTML = Object.entries(productQtyMap).map(([name, qty]) => `
-        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-          <div class="text-[10px] text-slate-500 truncate">${name}</div>
-          <div class="font-extrabold text-slate-800 text-xs mt-0.5">${qty.toLocaleString()} <span class="text-[10px] font-normal text-slate-400">개</span></div>
-        </div>
-      `).join('');
+      if (prodContainer) {
+        prodContainer.innerHTML = Object.entries(productQtyMap).map(([name, qty]) => `
+          <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+            <div class="text-[10px] text-slate-500 truncate">${name}</div>
+            <div class="font-extrabold text-slate-800 text-xs mt-0.5">${qty.toLocaleString()} <span class="text-[10px] font-normal text-slate-400">개</span></div>
+          </div>
+        `).join('');
+      }
     }
 
     function saveOrdersData(sync = true) {
@@ -2878,10 +2889,10 @@
     }
 
     function updateOrderCountBadge() {
-      document.getElementById('badge-total-orders').textContent = orders.length;
+      const badge = document.getElementById('badge-total-orders');
+      if (badge) badge.textContent = orders.length;
     }
 
-    /* ★주문 수정 모달: 2층 상하 배치 (상품명 100% 온전 노출 & 기존 품목 채워짐)★ */
     function openEditOrderModal() {
       const order = orders.find(o => o.id === currentSelectedOrderId);
       if (!order) return;
@@ -2905,13 +2916,11 @@
 
         return `
           <div class="p-2.5 ${existQty > 0 ? 'bg-blue-50/70 border border-blue-200' : 'bg-slate-50 border border-slate-100'} rounded-xl space-y-1.5">
-            <!-- 1층: 긴 상품명도 100% 온전하게 노출 -->
             <div class="flex items-center justify-between">
               <span class="font-extrabold text-slate-800 text-xs">${p.name}</span>
               ${existQty > 0 ? '<span class="text-[10px] text-blue-600 font-bold bg-blue-100/70 px-1.5 py-0.5 rounded">현재 담김</span>' : ''}
             </div>
             
-            <!-- 2층: 큼직한 단가 및 수량 입력란 -->
             <div class="flex items-center justify-between pt-0.5">
               <div class="flex items-center gap-1">
                 <span class="text-[11px] text-slate-500 font-bold">단가:</span>
@@ -2920,4 +2929,73 @@
               </div>
               <div class="flex items-center gap-1">
                 <span class="text-[11px] text-slate-500 font-bold">수량:</span>
-                <input type="number" id="edit-qty-${p.id}" value="${existQty}" min="0
+                <input type="number" id="edit-qty-${p.id}" value="${existQty}" min="0" class="w-14 p-1 border border-slate-300 rounded text-center font-black text-xs text-blue-600 bg-white">
+                <span class="text-[10px] text-slate-400">개</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('edit-shipping-fee').value = order.shippingFee || 0;
+      document.getElementById('edit-reason-input').value = '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditOrderModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    function submitOrderEdit() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+      const reason = document.getElementById('edit-reason-input').value.trim() || '내용 수정';
+      const newShippingFee = parseInt(document.getElementById('edit-shipping-fee').value, 10) || 0;
+
+      const oldTotal = order.totalPrice;
+      let newItems = [];
+      let newTotal = 0;
+
+      MASTER_PRODUCTS.forEach(p => {
+        const q = parseInt(document.getElementById(`edit-qty-${p.id}`).value, 10) || 0;
+        const pr = parseInt(document.getElementById(`edit-price-${p.id}`).value, 10) || p.defaultPrice;
+        if (q > 0) {
+          const itemTot = q * pr;
+          newTotal += itemTot;
+          newItems.push({ id: p.id, name: p.name, price: pr, qty: q, itemTotal: itemTot, carton: p.carton, group: p.group });
+        }
+      });
+
+      if (newItems.length === 0) return alert("최소 1개 이상의 품목 수량이 필요합니다.");
+
+      newTotal += newShippingFee;
+      order.shippingFee = newShippingFee;
+      order.items = newItems;
+      order.itemsSummary = newItems.map(i => `${i.name} ${i.qty}개`).join(', ');
+      if (newShippingFee > 0) order.itemsSummary += ` (택배비 ${newShippingFee.toLocaleString()}원)`;
+      order.totalQty = newItems.reduce((acc, cur) => acc + cur.qty, 0);
+      order.totalPrice = newTotal;
+
+      if (order.isTaxExempt) {
+        order.supplyPrice = newTotal;
+        order.vat = 0;
+      } else {
+        order.supplyPrice = Math.round(newTotal / 1.1);
+        order.vat = newTotal - order.supplyPrice;
+      }
+
+      order.status = '주문변경';
+      if (!order.auditLogs) order.auditLogs = [];
+      order.auditLogs.push(`[${new Date().toISOString().slice(0,16).replace('T',' ')}] 수정 (${reason}): ${oldTotal.toLocaleString()}원 ➔ ${newTotal.toLocaleString()}원`);
+
+      saveOrdersData();
+      syncOrderToGoogleSheet(order);
+      renderOrdersTable();
+      refreshAnalytics();
+      closeEditOrderModal();
+      openOrderDrawer(currentSelectedOrderId);
+      alert("주문이 성공적으로 수정되었습니다.");
+    }
+  </script>
+</body>
+</html>
