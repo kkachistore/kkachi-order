@@ -51,7 +51,7 @@
     <div class="hidden md:flex max-w-7xl mx-auto px-4 gap-6 text-sm font-semibold border-t border-slate-100">
       <button onclick="switchTab('new-order')" id="tab-btn-new-order" class="py-3 border-b-2 border-[#191f28] text-[#191f28]">신규 주문</button>
       <button onclick="switchTab('order-list')" id="tab-btn-order-list" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">주문 내역 <span id="badge-total-orders" class="ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full text-xs">0</span></button>
-      <button onclick="switchTab('clients')" id="tab-btn-clients" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">거래처 관리</button>
+      <button onclick="switchTab('clients')" id="tab-btn-clients" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">거래처/CRM 관리</button>
       <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">손익 관리</button>
       <button onclick="switchTab('tax')" id="tab-btn-tax" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">세금계산서 집계</button>
     </div>
@@ -63,185 +63,226 @@
     <!-- 1. 신규 주문 탭 -->
     <section id="tab-new-order" class="space-y-3 md:space-y-6">
       
-      <!-- 카카오톡 주문 입력창 -->
-      <div class="toss-card p-3.5 md:p-5">
-        <div class="flex items-center justify-between mb-2">
-          <label class="text-xs md:text-sm font-bold text-[#191f28] flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.708 4.8 4.27 6.054-.187.702-.68 2.544-.78 2.94-.124.492.18.486.378.354.26-.172 3.03-2.073 3.51-2.404.53.078 1.07.12 1.622.12 4.97 0 9-3.186 9-7.115C21 6.185 16.97 3 12 3z"/></svg>
-            카카오톡 주문 입력 창
-          </label>
-          <button onclick="resetOrderForm()" class="text-xs text-slate-400 hover:text-slate-700 font-medium py-1 px-2">새 주문 작성 (초기화)</button>
+      <!-- 상단 액션: 단건 카톡 주문 vs 대량 다중 배송 엑셀 업로드 -->
+      <div class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200">
+        <span class="text-xs font-bold text-slate-700">주문 접수 방식:</span>
+        <div class="flex gap-1.5">
+          <button onclick="toggleBulkOrderMode(false)" id="btn-mode-single" class="toss-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-[#191f28] text-white">단건 주문 (카톡/수기)</button>
+          <button onclick="toggleBulkOrderMode(true)" id="btn-mode-bulk" class="toss-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">대량 다중 배송 (엑셀)</button>
         </div>
-        <textarea id="raw-order-text" rows="5" placeholder="카톡 주문 전문을 그대로 붙여넣으세요.&#10;예:&#10;■상품명 >국산 생강청&#10;■발주수량 : 25개&#10;■수취인(사업장):성남시 분당구 판교로432 제일프라자 111호 달콤한곳간&#10;■연락처 : 010 6365 6680" class="w-full text-xs md:text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3182f6] leading-relaxed transition"></textarea>
-        
-        <div class="flex justify-between items-center mt-2">
-          <span id="order-lock-indicator" class="text-[11px] font-bold"></span>
-          <button id="btn-parse-ai" onclick="parseRawOrderText()" class="toss-btn bg-[#3182f6] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-1.5 shadow-sm hover:bg-blue-600">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            자동 채우기 (AI 파싱)
+      </div>
+
+      <!-- [모드 A] 대량 다중 배송 엑셀 업로더 (기본 숨김) -->
+      <div id="bulk-order-box" class="toss-card p-4 space-y-3 hidden bg-blue-50/40 border-blue-200">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">대량 다중 배송지 일괄 등록 (Batch)</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">벤더사에서 전달받은 엑셀 파일(.xlsx)을 올리면 자동으로 열을 매핑하여 한 번에 등록합니다.</p>
+          </div>
+          <label class="toss-btn bg-[#3182f6] text-white text-xs font-bold px-3 py-2 rounded-xl cursor-pointer shadow-sm">
+            엑셀 파일 업로드
+            <input type="file" id="bulk-excel-input" accept=".xlsx, .xls" class="hidden" onchange="handleBulkExcelUpload(event)">
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-200 text-xs">
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">발주 거래처 (정산처)</label>
+            <input type="text" id="bulk-client-name" placeholder="예: (주)한국유통" class="w-full p-2 border border-slate-200 rounded-lg outline-none font-bold">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">전체 배송지 일괄 적용 품목</label>
+            <select id="bulk-common-product" class="w-full p-2 border border-slate-200 rounded-lg outline-none bg-white font-medium"></select>
+          </div>
+        </div>
+
+        <div id="bulk-preview-summary" class="hidden flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 text-xs">
+          <span class="font-bold text-slate-800">인식된 배송지: <b id="bulk-preview-count" class="text-blue-600">0</b>곳</span>
+          <button onclick="executeBulkSave()" class="toss-btn bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl shadow-xs">
+            대량 주문 일괄 저장 승인
           </button>
         </div>
       </div>
 
-      <!-- 입력 폼 그리드 -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-6">
-        
-        <!-- 좌측 컬럼: 거래처, 배송지, 품목 -->
-        <div class="lg:col-span-7 space-y-3 md:space-y-4">
+      <!-- [모드 B] 단건 카톡 주문 입력창 -->
+      <div id="single-order-box" class="space-y-3 md:space-y-6">
+        <div class="toss-card p-3.5 md:p-5">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs md:text-sm font-bold text-[#191f28] flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.708 4.8 4.27 6.054-.187.702-.68 2.544-.78 2.94-.124.492.18.486.378.354.26-.172 3.03-2.073 3.51-2.404.53.078 1.07.12 1.622.12 4.97 0 9-3.186 9-7.115C21 6.185 16.97 3 12 3z"/></svg>
+              카카오톡 주문 입력 창
+            </label>
+            <button onclick="resetOrderForm()" class="text-xs text-slate-400 hover:text-slate-700 font-medium py-1 px-2">새 주문 작성 (초기화)</button>
+          </div>
+          <textarea id="raw-order-text" rows="5" placeholder="카톡 주문 전문을 그대로 붙여넣으세요.&#10;예:&#10;■상품명 >국산 생강청&#10;■발주수량 : 25개&#10;■수취인(사업장):성남시 분당구 판교로432 제일프라자 111호 달콤한곳간&#10;■연락처 : 010 6365 6680" class="w-full text-xs md:text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3182f6] leading-relaxed transition"></textarea>
           
-          <!-- 1. 발주 거래처 -->
-          <div class="toss-card p-3.5 md:p-5 space-y-2.5">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 class="font-bold text-xs md:text-sm text-slate-800 flex items-center gap-2">
-                <span>1. 발주 거래처</span>
-                <span id="client-type-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full font-medium"></span>
-              </h3>
-              <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
-                <button type="button" id="tax-type-taxable" onclick="setTaxType(false)" class="px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs">과세(기본)</button>
-                <button type="button" id="tax-type-exempt" onclick="setTaxType(true)" class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800">면세(교회 등)</button>
-              </div>
-            </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 relative">
-              <div class="sm:col-span-1">
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">거래처 상호명</label>
-                <input type="text" id="order-client-name" oninput="handleClientSearch(this.value)" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
-                <div id="client-autocomplete" class="hidden absolute top-14 left-0 w-full sm:w-72 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto"></div>
-              </div>
-              <div>
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">사업자등록번호</label>
-                <input type="text" id="order-biz-num" oninput="formatBizNumInput(this)" placeholder="000-00-00000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
-              </div>
-              <div>
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">계산서 이메일</label>
-                <input type="email" id="order-client-email" placeholder="tax@example.com" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. 실제 배송지 -->
-          <div class="toss-card p-3.5 md:p-5 space-y-2.5">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 class="font-bold text-xs md:text-sm text-slate-800">2. 실제 배송지</h3>
-              <label class="flex items-center gap-1 text-[11px] text-slate-600 cursor-pointer">
-                <input type="checkbox" id="sync-receiver-chk" onchange="toggleSyncReceiver(this.checked)" class="rounded text-[#3182f6] focus:ring-0">
-                발주처와 동일
-              </label>
-            </div>
-
-            <div id="client-recent-addresses-box" class="hidden flex-wrap items-center gap-1.5 py-1"></div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령인 성함/매장</label>
-                <input type="text" id="order-receiver-name" placeholder="홍길동" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
-              </div>
-              <div>
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령자 전화번호</label>
-                <input type="text" id="order-receiver-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
-              </div>
-              <div class="sm:col-span-2">
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령자 주소 (상세주소 포함)</label>
-                <input type="text" id="order-receiver-address" placeholder="도로명 또는 지번 주소" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
-              </div>
-              <div class="sm:col-span-2">
-                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">택배 메모 (요청사항)</label>
-                <input type="text" id="order-memo" placeholder="부재 시 문 앞 등" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
-              </div>
-            </div>
-          </div>
-
-          <!-- 3. 이번 주문 품목 & 패킹 가이드 -->
-          <div class="toss-card p-3.5 md:p-5 space-y-2.5">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 class="font-bold text-xs md:text-sm text-slate-800">3. 이번 주문 품목</h3>
-              <span id="tax-mode-indicator" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">과세 주문 (부가세 포함)</span>
-            </div>
-            
-            <div id="active-product-rows" class="space-y-2"></div>
-
-            <button onclick="openProductSelectModal()" class="w-full toss-btn text-xs py-2.5 border-2 border-dashed border-slate-300 hover:border-[#3182f6] text-slate-600 hover:text-[#3182f6] font-bold rounded-xl flex items-center justify-center gap-1.5 bg-slate-50">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-              + 품목 터치하여 추가 (원클릭)
+          <div class="flex justify-between items-center mt-2">
+            <span id="order-lock-indicator" class="text-[11px] font-bold"></span>
+            <button id="btn-parse-ai" onclick="parseRawOrderText()" class="toss-btn bg-[#3182f6] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-1.5 shadow-sm hover:bg-blue-600">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              자동 채우기 (AI 파싱)
             </button>
-
-            <!-- 패킹 박스 단위 실시간 피드백 -->
-            <div id="packing-status-box" class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 space-y-1.5 text-xs">
-              <div class="font-bold text-slate-700 flex items-center gap-1 text-[11px]">
-                <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                카톤 박스 패킹 가이드 현황
-              </div>
-              <div id="packing-groups-container" class="space-y-1"></div>
-            </div>
-
-            <div class="border-t border-slate-100 pt-2 flex justify-between text-xs text-slate-600">
-              <span>품목 소계</span>
-              <span id="preview-items-subtotal" class="font-bold text-slate-800">0원</span>
-            </div>
           </div>
-
         </div>
 
-        <!-- 우측: 결제금액, 카톡 답장, 거래명세표 -->
-        <div class="lg:col-span-5 space-y-3 md:space-y-4">
+        <!-- 폼 2열 그리드 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-6">
           
-          <div class="toss-card p-4 md:p-5 bg-[#191f28] text-white space-y-3">
-            <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-              <label class="text-xs font-semibold text-slate-300">택배비 (배송비)</label>
-              <div class="flex items-center gap-1.5">
-                <input type="number" id="order-shipping-fee" value="0" step="500" min="0" oninput="calculateNewOrderTotals()" class="w-20 text-right p-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs md:text-sm outline-none focus:ring-1 focus:ring-blue-400">
-                <span class="text-xs text-slate-400">원</span>
+          <!-- 좌측 컬럼 -->
+          <div class="lg:col-span-7 space-y-3 md:space-y-4">
+            
+            <!-- 1. 발주 거래처 -->
+            <div class="toss-card p-3.5 md:p-5 space-y-2.5">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-xs md:text-sm text-slate-800 flex items-center gap-2">
+                  <span>1. 발주 거래처</span>
+                  <span id="client-type-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full font-medium"></span>
+                </h3>
+                <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+                  <button type="button" id="tax-type-taxable" onclick="setTaxType(false)" class="px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs">과세(기본)</button>
+                  <button type="button" id="tax-type-exempt" onclick="setTaxType(true)" class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800">면세(교회 등)</button>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 relative">
+                <div class="sm:col-span-1">
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">거래처 상호명</label>
+                  <input type="text" id="order-client-name" oninput="handleClientSearch(this.value)" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
+                  <div id="client-autocomplete" class="hidden absolute top-14 left-0 w-full sm:w-72 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto"></div>
+                </div>
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">사업자등록번호</label>
+                  <input type="text" id="order-biz-num" oninput="formatBizNumInput(this)" placeholder="000-00-00000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
+                </div>
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">계산서 이메일</label>
+                  <input type="email" id="order-client-email" placeholder="tax@example.com" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                </div>
               </div>
             </div>
 
-            <div class="flex justify-between items-center text-xs text-slate-400">
-              <span>공급가액: <b id="summary-supply" class="text-white font-normal">0원</b></span>
-              <span>세액: <b id="summary-vat" class="text-white font-normal">0원</b></span>
-            </div>
-            
-            <div class="flex justify-between items-baseline pt-2 border-t border-slate-700">
-              <span class="text-xs md:text-sm font-semibold text-slate-300">최종 입금액</span>
-              <span id="summary-total" class="text-xl md:text-2xl font-black text-amber-400">0원</span>
+            <!-- 2. 실제 배송지 -->
+            <div class="toss-card p-3.5 md:p-5 space-y-2.5">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-xs md:text-sm text-slate-800">2. 실제 배송지</h3>
+                <label class="flex items-center gap-1 text-[11px] text-slate-600 cursor-pointer">
+                  <input type="checkbox" id="sync-receiver-chk" onchange="toggleSyncReceiver(this.checked)" class="rounded text-[#3182f6] focus:ring-0">
+                  발주처와 동일
+                </label>
+              </div>
+
+              <div id="client-recent-addresses-box" class="hidden flex-wrap items-center gap-1.5 py-1"></div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령인 성함/매장</label>
+                  <input type="text" id="order-receiver-name" placeholder="홍길동" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                </div>
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령자 전화번호</label>
+                  <input type="text" id="order-receiver-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령자 주소 (상세주소 포함)</label>
+                  <input type="text" id="order-receiver-address" placeholder="도로명 또는 지번 주소" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">택배 메모 (요청사항)</label>
+                  <input type="text" id="order-memo" placeholder="부재 시 문 앞 등" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                </div>
+              </div>
             </div>
 
-            <button id="btn-save-order" onclick="saveNewOrder()" class="toss-btn w-full bg-[#3182f6] hover:bg-blue-600 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm md:text-base text-center shadow">
-              주문 저장 완료
-            </button>
+            <!-- 3. 품목 & 패킹 가이드 -->
+            <div class="toss-card p-3.5 md:p-5 space-y-2.5">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-xs md:text-sm text-slate-800">3. 이번 주문 품목</h3>
+                <span id="tax-mode-indicator" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">과세 주문 (부가세 포함)</span>
+              </div>
+              
+              <div id="active-product-rows" class="space-y-2"></div>
+
+              <button onclick="openProductSelectModal()" class="w-full toss-btn text-xs py-2.5 border-2 border-dashed border-slate-300 hover:border-[#3182f6] text-slate-600 hover:text-[#3182f6] font-bold rounded-xl flex items-center justify-center gap-1.5 bg-slate-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                + 품목 터치하여 추가 (원클릭)
+              </button>
+
+              <div id="packing-status-box" class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 space-y-1.5 text-xs">
+                <div class="font-bold text-slate-700 flex items-center gap-1 text-[11px]">
+                  <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                  카톤 박스 패킹 가이드 현황
+                </div>
+                <div id="packing-groups-container" class="space-y-1"></div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-2 flex justify-between text-xs text-slate-600">
+                <span>품목 소계</span>
+                <span id="preview-items-subtotal" class="font-bold text-slate-800">0원</span>
+              </div>
+            </div>
+
           </div>
 
-          <!-- 카톡 전송 답장 -->
-          <div class="toss-card p-3.5 md:p-4 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-700">카톡 전송 답장</span>
-              <button onclick="copyKakaoMsgFromForm()" class="toss-btn text-xs bg-slate-100 hover:bg-slate-200 font-semibold text-[#191f28] px-2.5 py-1 rounded-lg flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                카톡 답장 복사
+          <!-- 우측 컬럼 -->
+          <div class="lg:col-span-5 space-y-3 md:space-y-4">
+            
+            <div class="toss-card p-4 md:p-5 bg-[#191f28] text-white space-y-3">
+              <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                <label class="text-xs font-semibold text-slate-300">택배비 (배송비)</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="order-shipping-fee" value="0" step="500" min="0" oninput="calculateNewOrderTotals()" class="w-20 text-right p-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs md:text-sm outline-none focus:ring-1 focus:ring-blue-400">
+                  <span class="text-xs text-slate-400">원</span>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center text-xs text-slate-400">
+                <span>공급가액: <b id="summary-supply" class="text-white font-normal">0원</b></span>
+                <span>세액: <b id="summary-vat" class="text-white font-normal">0원</b></span>
+              </div>
+              
+              <div class="flex justify-between items-baseline pt-2 border-t border-slate-700">
+                <span class="text-xs md:text-sm font-semibold text-slate-300">최종 입금액</span>
+                <span id="summary-total" class="text-xl md:text-2xl font-black text-amber-400">0원</span>
+              </div>
+
+              <button id="btn-save-order" onclick="saveNewOrder()" class="toss-btn w-full bg-[#3182f6] hover:bg-blue-600 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm md:text-base text-center shadow">
+                주문 저장 완료
               </button>
             </div>
-            <textarea id="kakao-preview-textarea" rows="7" class="w-full text-[11px] md:text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono leading-relaxed outline-none"></textarea>
-          </div>
 
-          <!-- 거래명세표 이미지 -->
-          <div class="toss-card p-3.5 md:p-4 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-700">거래명세표 이미지</span>
-              <div class="flex gap-1">
-                <button onclick="shareOrCopyInvoiceImage('invoice-render-box')" class="toss-btn text-xs bg-blue-50 text-[#3182f6] hover:bg-blue-100 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  카톡/이미지 공유
-                </button>
-                <button onclick="downloadInvoiceImage('invoice-render-box')" class="toss-btn text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold px-2 py-1 rounded-lg">
-                  저장
+            <!-- 카톡 답장 -->
+            <div class="toss-card p-3.5 md:p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700">카톡 전송 답장</span>
+                <button onclick="copyKakaoMsgFromForm()" class="toss-btn text-xs bg-slate-100 hover:bg-slate-200 font-semibold text-[#191f28] px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  카톡 답장 복사
                 </button>
               </div>
+              <textarea id="kakao-preview-textarea" rows="7" class="w-full text-[11px] md:text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono leading-relaxed outline-none"></textarea>
             </div>
-            
-            <div class="overflow-x-auto border border-slate-200 rounded-xl p-2 bg-slate-50 flex justify-center">
-              <div id="invoice-render-box" style="width: 460px; min-width: 460px;" class="bg-white p-4 text-[10px] text-slate-900 border border-slate-400 shrink-0"></div>
+
+            <!-- 명세표 렌더러 -->
+            <div class="toss-card p-3.5 md:p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700">거래명세표 이미지</span>
+                <div class="flex gap-1">
+                  <button onclick="shareOrCopyInvoiceImage('invoice-render-box')" class="toss-btn text-xs bg-blue-50 text-[#3182f6] hover:bg-blue-100 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    카톡/이미지 공유
+                  </button>
+                  <button onclick="downloadInvoiceImage('invoice-render-box')" class="toss-btn text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold px-2 py-1 rounded-lg">
+                    저장
+                  </button>
+                </div>
+              </div>
+              <div class="overflow-x-auto border border-slate-200 rounded-xl p-2 bg-slate-50 flex justify-center">
+                <div id="invoice-render-box" style="width: 460px; min-width: 460px;" class="bg-white p-4 text-[10px] text-slate-900 border border-slate-400 shrink-0"></div>
+              </div>
             </div>
+
           </div>
 
         </div>
-
       </div>
 
     </section>
@@ -280,10 +321,8 @@
         </div>
       </div>
 
-      <!-- 모바일 카드 뷰 -->
       <div id="mobile-order-cards" class="md:hidden space-y-2.5"></div>
 
-      <!-- PC 와이드 테이블 -->
       <div class="hidden md:block toss-card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs whitespace-nowrap">
@@ -306,14 +345,17 @@
       </div>
     </section>
 
-    <!-- 3. 거래처 관리 탭 -->
+    <!-- 3. 거래처/CRM 관리 탭 (Omni-Search 탑재) -->
     <section id="tab-clients" class="hidden space-y-3 md:space-y-4">
       <div class="toss-card p-3.5 md:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
-        <input type="text" id="client-search-box" oninput="renderClientsList()" placeholder="거래처 상호, 담당자, 연락처 검색..." class="text-xs p-2.5 border border-slate-200 rounded-xl outline-none flex-1 max-w-sm">
+        <div class="relative flex-1 max-w-md">
+          <input type="text" id="client-search-box" oninput="renderClientsList()" placeholder="상호, 수령인, 전화번호 끝4자리, 주소 통합 검색..." class="w-full text-xs p-2.5 pl-8 border border-slate-200 rounded-xl outline-none">
+          <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
         <div class="flex items-center justify-between sm:justify-end gap-2">
-          <span class="text-xs text-slate-400">등록: <b id="clients-count" class="text-slate-800">0</b>곳</span>
+          <span class="text-xs text-slate-400">등록처: <b id="clients-count" class="text-slate-800">0</b>곳</span>
           <button onclick="openClientEditModal(null)" class="toss-btn text-xs bg-[#3182f6] text-white font-bold px-3 py-2 rounded-xl flex items-center gap-1 shadow-xs">
-            + 신규 거래처 등록
+            + 신규 등록
           </button>
         </div>
       </div>
@@ -350,7 +392,7 @@
     <!-- 5. 세금계산서 집계 탭 -->
     <section id="tab-tax" class="hidden space-y-3">
       <div class="toss-card p-3.5 flex justify-between items-center gap-2">
-        <span class="text-xs text-slate-600">홈택스 전자세금계산서 일괄등록용 (면세 분리)</span>
+        <span class="text-xs text-slate-600">홈택스 전자세금계산서 일괄등록 (면세 분리)</span>
         <button onclick="downloadHometaxExcel()" class="toss-btn text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 shadow-xs">
           홈택스 엑셀 다운
         </button>
@@ -388,7 +430,7 @@
     </button>
     <button onclick="switchTab('clients')" id="m-tab-clients" class="flex flex-col items-center py-1 text-slate-400">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-      거래처
+      거래처/CRM
     </button>
     <button onclick="switchTab('analytics')" id="m-tab-analytics" class="flex flex-col items-center py-1 text-slate-400">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -400,57 +442,94 @@
     </button>
   </nav>
 
-  <!-- [모달 1] 내 회사정보 -->
+  <!-- [모달 1] 내 회사정보 창고 (계좌 3줄, 이메일 단독복사, 명함보관, 견적서 즉시 복사 탑재) -->
   <div id="company-info-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-2.5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
         <h3 class="font-extrabold text-sm text-slate-800">까치방앗간 회사 정보 창고</h3>
         <button onclick="closeCompanyInfoModal()" class="text-slate-400 text-lg">✕</button>
       </div>
 
       <div class="space-y-2 text-xs">
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex justify-between items-center">
+        
+        <!-- 견적서 원클릭 복사 바 -->
+        <div class="bg-blue-600 text-white p-2.5 rounded-xl flex justify-between items-center shadow-xs">
           <div>
-            <span class="text-[10px] text-blue-600 font-bold block">사업자 계좌</span>
-            <div class="font-bold text-slate-800">국민 810137-04-020759</div>
-            <div class="text-[11px] text-slate-500">정승욱 (까치방앗간)</div>
+            <span class="text-[10px] text-blue-200 font-bold block">공식 단가 안내</span>
+            <div class="font-bold text-xs">까치방앗간 품목 견적서 복사</div>
           </div>
-          <button onclick="copyToClipboard('국민은행 810137-04-020759 정승욱(까치방앗간)')" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">복사</button>
+          <button onclick="copyQuotationText()" class="toss-btn bg-white text-blue-600 px-2.5 py-1 rounded-lg font-black text-xs">견적서 복사</button>
         </div>
 
+        <!-- 사업자 계좌 (3줄 포맷) -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex justify-between items-center">
           <div>
-            <span class="text-[10px] text-amber-600 font-bold block">개인 계좌</span>
-            <div class="font-bold text-slate-800">국민 214901-04-035372</div>
-            <div class="text-[11px] text-slate-500">정승욱</div>
+            <span class="text-[10px] text-blue-600 font-bold block">사업자 통장 계좌</span>
+            <div class="font-bold text-slate-800 font-mono text-[11px] leading-tight mt-0.5">
+              국민은행<br>
+              810137-04-020759<br>
+              정승욱 (까치방앗간)
+            </div>
           </div>
-          <button onclick="copyToClipboard('국민은행 214901-04-035372 정승욱')" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">복사</button>
+          <button onclick="copyToClipboard('국민은행\n810137-04-020759\n정승욱 (까치방앗간)')" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">복사</button>
         </div>
 
+        <!-- 개인 계좌 (3줄 포맷) -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex justify-between items-center">
           <div>
-            <span class="text-[10px] text-slate-500 font-bold block">사업자등록 텍스트 세트</span>
-            <div class="font-bold text-slate-800">까치방앗간 (대표: 정승욱)</div>
-            <div class="text-[10px] text-slate-400">등록번호, 이메일, 주소 종합</div>
+            <span class="text-[10px] text-amber-600 font-bold block">개인 통장 계좌</span>
+            <div class="font-bold text-slate-800 font-mono text-[11px] leading-tight mt-0.5">
+              국민은행<br>
+              214901-04-035372<br>
+              정승욱
+            </div>
           </div>
-          <button onclick="copyCompanyFullText()" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">종합복사</button>
+          <button onclick="copyToClipboard('국민은행\n214901-04-035372\n정승욱')" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">복사</button>
         </div>
 
+        <!-- 이메일 주소 단독 복사 -->
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex justify-between items-center">
+          <div>
+            <span class="text-[10px] text-slate-500 font-bold block">계산서 수신 이메일</span>
+            <div class="font-bold text-slate-800 font-mono text-xs">ceo@kkachistore.com</div>
+          </div>
+          <button onclick="copyToClipboard('ceo@kkachistore.com')" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">복사</button>
+        </div>
+
+        <!-- 명함 사진 보관 및 카톡 공유 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 space-y-1.5">
           <div class="flex justify-between items-center">
-            <span class="text-[10px] text-slate-500 font-bold">사업자등록증 사진 보관</span>
+            <span class="text-[10px] text-slate-600 font-bold">대표자 명함 사진</span>
             <label class="text-[10px] text-[#3182f6] font-bold cursor-pointer">
-              [사진 등록/변경]
-              <input type="file" id="company-biz-img-input" accept="image/*" class="hidden" onchange="handleBizImageUpload(event)">
+              [사진 등록]
+              <input type="file" id="company-card-img-input" accept="image/*" class="hidden" onchange="handleImageSave(event, 'card')">
             </label>
           </div>
-          <div id="company-biz-preview-box" class="h-24 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden">
-            <span class="text-slate-400 text-[11px]">등록된 이미지가 없습니다.</span>
+          <div id="company-card-preview-box" class="h-20 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden">
+            <span class="text-slate-400 text-[10px]">등록된 명함이 없습니다.</span>
           </div>
-          <button onclick="shareBizImage()" id="btn-share-biz-img" class="w-full toss-btn text-xs bg-slate-800 text-white font-bold py-1.5 rounded-lg hidden">
+          <button onclick="shareStoredImage('card')" id="btn-share-card-img" class="w-full toss-btn text-xs bg-slate-800 text-white font-bold py-1.5 rounded-lg hidden">
+            명함 카톡 공유 / 다운로드
+          </button>
+        </div>
+
+        <!-- 사업자등록증 사진 보관 및 카톡 공유 -->
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 space-y-1.5">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-slate-600 font-bold">사업자등록증 사진</span>
+            <label class="text-[10px] text-[#3182f6] font-bold cursor-pointer">
+              [사진 등록]
+              <input type="file" id="company-biz-img-input" accept="image/*" class="hidden" onchange="handleImageSave(event, 'biz')">
+            </label>
+          </div>
+          <div id="company-biz-preview-box" class="h-20 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden">
+            <span class="text-slate-400 text-[10px]">등록된 사업자등록증이 없습니다.</span>
+          </div>
+          <button onclick="shareStoredImage('biz')" id="btn-share-biz-img" class="w-full toss-btn text-xs bg-slate-800 text-white font-bold py-1.5 rounded-lg hidden">
             사업자등록증 카톡 공유 / 다운로드
           </button>
         </div>
+
       </div>
     </div>
   </div>
@@ -603,7 +682,7 @@
     </div>
   </div>
 
-  <!-- [모달 5] 주문 품목/단가 수정 모달 -->
+  <!-- [모달 5] 주문 수정 모달 -->
   <div id="edit-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -629,9 +708,6 @@
         <h3 class="font-bold text-xs md:text-sm text-slate-800">구글 시트 연동 설정</h3>
         <button onclick="closeConfigModal()" class="text-slate-400">✕</button>
       </div>
-      <p class="text-[11px] text-slate-500 leading-relaxed">
-        구글 Apps Script 웹 앱 URL이 등록되면 PC와 스마트폰 간 데이터가 실시간 자동 동기화됩니다.
-      </p>
       <div>
         <label class="text-[11px] font-semibold text-slate-500 mb-0.5 block">웹 앱 URL</label>
         <input type="text" id="config-sheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2 border border-slate-200 rounded-xl outline-none font-mono">
@@ -668,14 +744,15 @@
       phone: "010-9715-9578",
       email: "ceo@kkachistore.com",
       address: "서울특별시 송파구 오금로 111, 801호",
-      bankBiz: "국민은행 810137-04-020759 정승욱 (까치방앗간)",
-      bankPersonal: "국민은행 214901-04-035372 정승욱"
+      bankBiz: "국민은행\n810137-04-020759\n정승욱 (까치방앗간)",
+      bankPersonal: "국민은행\n214901-04-035372\n정승욱"
     };
 
     const STORAGE_KEY_ORDERS = 'kkachi_b2b_orders_v5';
     const STORAGE_KEY_CLIENTS = 'kkachi_b2b_clients_v5';
     const STORAGE_KEY_CONFIG = 'kkachi_b2b_config_v5';
     const STORAGE_KEY_BIZ_IMG = 'kkachi_b2b_biz_img_v5';
+    const STORAGE_KEY_CARD_IMG = 'kkachi_b2b_card_img_v5';
 
     let orders = JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS)) || [];
     let clients = JSON.parse(localStorage.getItem(STORAGE_KEY_CLIENTS)) || [];
@@ -693,16 +770,18 @@
     let isTaxExemptOrder = false;
     let listFilter = 'all';
     let activeClientObj = null;
+    let parsedBulkRows = [];
 
     window.addEventListener('DOMContentLoaded', () => {
       initProductModalList();
+      initBulkCommonProducts();
       renderActiveProductRows();
       renderOrdersTable();
       renderClientsList();
       refreshAnalytics();
       updateOrderCountBadge();
       updateSyncStatusUI(false);
-      loadSavedBizImage();
+      loadSavedImages();
       
       if (config.sheetUrl) {
         fetchLatestFromGoogleSheet(false);
@@ -734,28 +813,147 @@
       if (tabId === 'tax') renderTaxTable();
     }
 
+    function toggleBulkOrderMode(isBulk) {
+      document.getElementById('single-order-box').classList.toggle('hidden', isBulk);
+      document.getElementById('bulk-order-box').classList.toggle('hidden', !isBulk);
+      document.getElementById('btn-mode-single').className = !isBulk ? 'toss-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-[#191f28] text-white' : 'toss-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200';
+      document.getElementById('btn-mode-bulk').className = isBulk ? 'toss-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-[#191f28] text-white' : 'toss-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200';
+    }
+
+    function initBulkCommonProducts() {
+      const select = document.getElementById('bulk-common-product');
+      select.innerHTML = MASTER_PRODUCTS.map(p => `<option value="${p.id}">${p.name} (단가: ${p.defaultPrice.toLocaleString()}원)</option>`).join('');
+    }
+
+    function handleBulkExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+        parsedBulkRows = [];
+        rows.forEach(r => {
+          const recName = r['수령인'] || r['수령자'] || r['받는분'] || r['성명'] || r['고객명'] || '';
+          let phone = (r['전화번호'] || r['연락처'] || r['핸드폰'] || r['휴대폰'] || '').toString().replace(/[^0-9]/g, '');
+          if (phone.length === 11) phone = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+          else if (phone.length === 10) phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+
+          const address = r['배송지'] || r['주소'] || r['도로명주소'] || r['기본주소'] || '';
+          const memo = r['메모'] || r['배송메모'] || r['요청사항'] || '';
+
+          if (recName || address) {
+            parsedBulkRows.push({ receiverName: recName, phone, address, memo });
+          }
+        });
+
+        if (parsedBulkRows.length > 0) {
+          document.getElementById('bulk-preview-summary').classList.remove('hidden');
+          document.getElementById('bulk-preview-count').textContent = parsedBulkRows.length;
+          alert(`총 ${parsedBulkRows.length}곳의 배송지가 정상 인식되었습니다.`);
+        } else {
+          alert("유효한 배송지 정보를 찾을 수 없습니다.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function executeBulkSave() {
+      const clientName = document.getElementById('bulk-client-name').value.trim();
+      if (!clientName) return alert("발주 거래처 상호명을 입력해주세요.");
+
+      const prodId = document.getElementById('bulk-common-product').value;
+      const product = MASTER_PRODUCTS.find(p => p.id === prodId);
+      if (!product) return;
+
+      const now = new Date();
+      const year = String(now.getFullYear()).slice(2);
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const datePrefix = `${year}${month}${day}`;
+
+      let maxSeq = 0;
+      orders.forEach(o => {
+        if (o.id && o.id.startsWith(datePrefix)) {
+          const parts = o.id.split('-');
+          if (parts.length === 2) {
+            const seq = parseInt(parts[1], 10);
+            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+          }
+        }
+      });
+
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
+
+      parsedBulkRows.forEach((r, idx) => {
+        maxSeq++;
+        const orderId = `${datePrefix}-${String(maxSeq).padStart(3, '0')}`;
+        const finalTotal = product.defaultPrice;
+        const supply = Math.round(finalTotal / 1.1);
+        const vat = finalTotal - supply;
+
+        const newOrder = {
+          id: orderId,
+          date: dateStr,
+          clientName: clientName,
+          bizNum: '',
+          email: '',
+          isTaxExempt: false,
+          receiverName: r.receiverName || clientName,
+          receiverPhone: r.phone || '',
+          receiverAddress: r.address || '',
+          memo: r.memo || '',
+          items: [{
+            id: product.id,
+            name: product.name,
+            price: product.defaultPrice,
+            defaultPrice: product.defaultPrice,
+            qty: 1
+          }],
+          shippingFee: 0,
+          itemsSummary: `${product.name} 1개`,
+          totalQty: 1,
+          supplyPrice: supply,
+          vat: vat,
+          totalPrice: finalTotal,
+          paymentStatus: 'unpaid',
+          paidAt: null,
+          status: '접수완료',
+          courier: 'CJ대한통운',
+          trackingNo: '',
+          auditLogs: [`[${dateStr}] 대량 엑셀 일괄 접수 (발주처: ${clientName})`]
+        };
+
+        orders.unshift(newOrder);
+        syncOrderToGoogleSheet(newOrder);
+      });
+
+      saveOrdersData();
+      renderOrdersTable();
+      refreshAnalytics();
+      updateOrderCountBadge();
+      alert(`총 ${parsedBulkRows.length}건의 주문이 성공적으로 저장되었습니다!`);
+      toggleBulkOrderMode(false);
+    }
+
     function formatPhoneInput(input) {
       let val = input.value.replace(/[^0-9]/g, '');
       if (val.length > 11) val = val.slice(0, 11);
-
-      if (val.length === 11) {
-        input.value = val.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-      } else if (val.length === 10) {
-        input.value = val.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-      } else {
-        input.value = val;
-      }
+      if (val.length === 11) input.value = val.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+      else if (val.length === 10) input.value = val.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+      else input.value = val;
     }
 
     function formatBizNumInput(input) {
       let val = input.value.replace(/[^0-9]/g, '');
       if (val.length > 10) val = val.slice(0, 10);
-
-      if (val.length === 10) {
-        input.value = val.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
-      } else {
-        input.value = val;
-      }
+      if (val.length === 10) input.value = val.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
+      else input.value = val;
     }
 
     function validatePhone(phone) {
@@ -1288,9 +1486,9 @@
             <td class="p-1 border-b border-slate-400 font-bold">${clientName}</td>
           </tr>
           <tr>
-            <td class="bg-slate-50 p-1 border-r border-b border-slate-400 font-semibold">대표자</td>
-            <td class="p-1 border-r border-b border-slate-400">${SUPPLIER_INFO.ceo}</td>
-            <td class="bg-slate-50 p-1 border-r border-b border-slate-400 font-semibold">수령인</td>
+            <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">대표자</td>
+            <td class="p-1 border-r border-slate-400">${SUPPLIER_INFO.ceo}</td>
+            <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">수령인</td>
             <td class="p-1 border-b border-slate-400">${receiverName || '-'}</td>
           </tr>
           <tr>
@@ -1378,7 +1576,7 @@
     }
 
     /* =====================================================================
-       [핵심 수정] 주문 저장 & 중복 없는 고유 주문번호 채번
+       주문 저장 & 유효성 검증
        ===================================================================== */
     function saveNewOrder() {
       const clientName = document.getElementById('order-client-name').value.trim();
@@ -1418,7 +1616,6 @@
         vat = finalTotal - supply;
       }
       
-      // [핵심 해결] 기존 주문 중 오늘 날짜의 최대 시퀀스를 찾아 무조건 +1 부여
       const now = new Date();
       const year = String(now.getFullYear()).slice(2);
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1437,7 +1634,6 @@
       });
       const orderId = `${datePrefix}-${String(maxSeq + 1).padStart(3, '0')}`;
       
-      // 일시 문자열 생성
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const dateStr = `${now.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
@@ -1474,7 +1670,6 @@
       orders.unshift(newOrder);
       saveOrdersData();
 
-      // 거래처 마스터 연동 및 배송지 이력 누적
       let client = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
       if (!client) {
         client = {
@@ -1921,7 +2116,7 @@
         msg = `[까치방앗간 입금안내]\n${order.clientName} 사장님, 일전에 접수된 주문 입금 확인 부탁드립니다.\n\n` +
               `• 품목: ${order.itemsSummary}\n` +
               `• 입금액: ${order.totalPrice.toLocaleString()}원\n` +
-              `• 계좌: ${SUPPLIER_INFO.bankBiz}\n\n확인 후 빠른 정산 처리 부탁드립니다.`;
+              `• 계좌:\n${SUPPLIER_INFO.bankBiz}\n\n확인 후 빠른 정산 처리 부탁드립니다.`;
       }
 
       document.getElementById('drawer-msg-preview').value = msg;
@@ -1962,49 +2157,132 @@
       }
     }
 
+    /* =====================================================================
+       거래처/CRM 관리 (통합 검색 & 직납/경유 자동 분류 & D-Day 알림)
+       ===================================================================== */
     function renderClientsList() {
       const container = document.getElementById('clients-cards-container');
       const search = (document.getElementById('client-search-box')?.value || '').toLowerCase();
       
-      const filtered = clients.filter(c => 
-        c.name.toLowerCase().includes(search) || 
-        (c.bizNum && c.bizNum.includes(search)) ||
-        (c.receiverPhone && c.receiverPhone.includes(search)) ||
-        (c.receiverName && c.receiverName.toLowerCase().includes(search))
+      // 거래처 목록과 배송처 목록을 통합 검색
+      const entityMap = new Map();
+
+      // 1. 등록된 공식 거래처 추가
+      clients.forEach(c => {
+        entityMap.set(c.name, {
+          id: c.id,
+          name: c.name,
+          type: '직접 거래처 (직납)',
+          isDirect: true,
+          bizNum: c.bizNum || '',
+          email: c.email || '',
+          phone: c.receiverPhone || '',
+          address: c.receiverAddress || '',
+          isTaxExempt: Boolean(c.isTaxExempt),
+          lastOrderDate: null,
+          orderCount: 0,
+          orders: []
+        });
+      });
+
+      // 2. 주문 이력 매핑 및 벤더 경유 배송처 자동 발굴
+      orders.forEach(o => {
+        if (o.status === '주문취소') return;
+
+        // 정산처 통계
+        if (entityMap.has(o.clientName)) {
+          const c = entityMap.get(o.clientName);
+          c.orderCount++;
+          c.orders.push(o);
+          if (!c.lastOrderDate || new Date(o.date) > new Date(c.lastOrderDate)) {
+            c.lastOrderDate = o.date;
+          }
+        }
+
+        // 벤더 경유 수령처 분리 판정
+        if (o.receiverName && o.receiverName !== o.clientName) {
+          const destKey = `${o.receiverName} (${o.clientName} 경유)`;
+          if (!entityMap.has(destKey)) {
+            entityMap.set(destKey, {
+              id: `DEST-${o.id}`,
+              name: o.receiverName,
+              vendorName: o.clientName,
+              type: '벤더 경유 배송처',
+              isDirect: false,
+              bizNum: '🔒 벤더 경유 (비공개)',
+              email: '',
+              phone: o.receiverPhone || '',
+              address: o.receiverAddress || '',
+              isTaxExempt: Boolean(o.isTaxExempt),
+              lastOrderDate: o.date,
+              orderCount: 1,
+              orders: [o]
+            });
+          } else {
+            const dest = entityMap.get(destKey);
+            dest.orderCount++;
+            dest.orders.push(o);
+            if (!dest.lastOrderDate || new Date(o.date) > new Date(dest.lastOrderDate)) {
+              dest.lastOrderDate = o.date;
+            }
+          }
+        }
+      });
+
+      const allEntities = Array.from(entityMap.values());
+      const filtered = allEntities.filter(e => 
+        e.name.toLowerCase().includes(search) || 
+        (e.vendorName && e.vendorName.toLowerCase().includes(search)) ||
+        (e.phone && e.phone.includes(search)) ||
+        (e.address && e.address.toLowerCase().includes(search))
       );
 
-      document.getElementById('clients-count').textContent = clients.length;
+      document.getElementById('clients-count').textContent = filtered.length;
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="col-span-full toss-card p-6 text-center text-xs text-slate-400">등록된 거래처가 없습니다.</div>';
+        container.innerHTML = '<div class="col-span-full toss-card p-6 text-center text-xs text-slate-400">검색된 거래처/배송처가 없습니다.</div>';
         return;
       }
 
-      container.innerHTML = filtered.map(c => `
-        <div onclick="openClientEditModal('${c.id}')" class="toss-card p-3.5 space-y-2 active:bg-slate-50 cursor-pointer transition">
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="font-extrabold text-sm text-slate-900">${c.name}</span>
-              <span class="text-xs text-slate-500 ml-1 font-medium">${c.receiverName || ''}</span>
-              ${c.isTaxExempt ? '<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black ml-1">면세</span>' : ''}
-            </div>
-            <button class="text-xs text-[#3182f6] font-bold bg-blue-50 px-2 py-0.5 rounded-md">수정</button>
-          </div>
+      const today = new Date();
+      container.innerHTML = filtered.map(e => {
+        let dDayText = '주문이력 없음';
+        let isOverdue = false;
+        if (e.lastOrderDate) {
+          const diffDays = Math.floor((today - new Date(e.lastOrderDate)) / (1000 * 60 * 60 * 24));
+          dDayText = `D+${diffDays}일 전 발주`;
+          if (diffDays >= 30) isOverdue = true;
+        }
 
-          <div class="text-xs space-y-1 text-slate-600">
-            <div class="flex items-center gap-1 font-mono text-[11px]">
-              <span class="text-slate-400">연락처:</span> ${c.receiverPhone || '미등록'}
+        return `
+          <div onclick="${e.isDirect ? `openClientEditModal('${e.id}')` : `alert('※ [${e.vendorName}]를 통해 배송된 수령처입니다.\\n공급단가는 벤더사 정책에 따라 보호/잠금 상태입니다.')`}" class="toss-card p-3.5 space-y-2 active:bg-slate-50 cursor-pointer transition">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="font-extrabold text-sm text-slate-900">${e.name}</span>
+                ${e.isDirect ? '<span class="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold ml-1">직납 거래처</span>' : 
+                  `<span class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold ml-1">[${e.vendorName}] 경유</span>`}
+                ${e.isTaxExempt ? '<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black ml-0.5">면세</span>' : ''}
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isOverdue ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}">
+                ${dDayText}
+              </span>
             </div>
-            <div class="flex items-center gap-1 text-[11px] truncate">
-              <span class="text-slate-400 shrink-0">출고지:</span> <span class="truncate">${c.receiverAddress || '미등록'}</span>
-            </div>
-            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-              <span>사업자: <b class="font-mono text-slate-700">${c.bizNum || '미등록'}</b></span>
-              <span>이메일: <b class="text-slate-700">${c.email || '미등록'}</b></span>
+
+            <div class="text-xs space-y-1 text-slate-600">
+              <div class="flex items-center gap-1 font-mono text-[11px]">
+                <span class="text-slate-400">연락처:</span> ${e.phone || '미등록'}
+              </div>
+              <div class="flex items-center gap-1 text-[11px] truncate">
+                <span class="text-slate-400 shrink-0">출고지:</span> <span class="truncate">${e.address || '미등록'}</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                <span>사업자: <b class="font-mono text-slate-700">${e.bizNum || '미등록'}</b></span>
+                <span>총 주문: <b class="text-blue-600 font-bold">${e.orderCount}</b>건</span>
+              </div>
             </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function openClientEditModal(clientId) {
@@ -2123,6 +2401,9 @@
       alert("거래처 정보가 저장되었습니다.");
     }
 
+    /* =====================================================================
+       회사 정보 창고 (견적서 복사, 계좌, 명함 보관)
+       ===================================================================== */
     function openCompanyInfoModal() {
       document.getElementById('company-info-modal').classList.remove('hidden');
     }
@@ -2132,66 +2413,84 @@
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => alert("계좌번호가 복사되었습니다!"));
+      navigator.clipboard.writeText(text).then(() => alert("복사되었습니다!"));
     }
 
-    function copyCompanyFullText() {
-      const full = `[까치방앗간 사업자 정보]
-• 상호: ${SUPPLIER_INFO.name}
-• 대표: ${SUPPLIER_INFO.ceo}
-• 사업자등록번호: ${SUPPLIER_INFO.bizNum}
-• 연락처: ${SUPPLIER_INFO.phone}
-• 이메일: ${SUPPLIER_INFO.email}
-• 사업장: ${SUPPLIER_INFO.address}
-• 사업자계좌: ${SUPPLIER_INFO.bankBiz}`;
-      navigator.clipboard.writeText(full).then(() => alert("사업자 종합정보가 복사되었습니다!"));
+    function copyQuotationText() {
+      let lines = [];
+      lines.push(`[까치방앗간 B2B 납품 견적서]`);
+      lines.push(`공급자: ${SUPPLIER_INFO.name} (대표: ${SUPPLIER_INFO.ceo})`);
+      lines.push(`연락처: ${SUPPLIER_INFO.phone}`);
+      lines.push(`이메일: ${SUPPLIER_INFO.email}`);
+      lines.push(`──────────────`);
+      lines.push(`■ 공급 품목 및 기준 단가 (VAT포함)`);
+      
+      MASTER_PRODUCTS.forEach(p => {
+        lines.push(`• ${p.name}: ${p.defaultPrice.toLocaleString()}원 (카톤단위: ${p.carton}개)`);
+      });
+
+      lines.push(`──────────────`);
+      lines.push(`■ 결제 계좌 안내`);
+      lines.push(SUPPLIER_INFO.bankBiz);
+      lines.push(`\n정성을 다해 정직하게 착유하여 납품해 드리겠습니다.`);
+
+      navigator.clipboard.writeText(lines.join('\n')).then(() => alert("견적서가 복사되었습니다! 카톡에 바로 붙여넣기 하세요."));
     }
 
-    function handleBizImageUpload(event) {
+    function handleImageSave(event, type) {
       const file = event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = function(e) {
         const base64 = e.target.result;
-        localStorage.setItem(STORAGE_KEY_BIZ_IMG, base64);
-        loadSavedBizImage();
-        alert("사업자등록증 사진이 안전하게 보관되었습니다!");
+        if (type === 'biz') localStorage.setItem(STORAGE_KEY_BIZ_IMG, base64);
+        if (type === 'card') localStorage.setItem(STORAGE_KEY_CARD_IMG, base64);
+        loadSavedImages();
+        alert(`${type === 'biz' ? '사업자등록증' : '명함'} 사진이 보관되었습니다!`);
       };
       reader.readAsDataURL(file);
     }
 
-    function loadSavedBizImage() {
-      const imgData = localStorage.getItem(STORAGE_KEY_BIZ_IMG);
-      const box = document.getElementById('company-biz-preview-box');
-      const shareBtn = document.getElementById('btn-share-biz-img');
+    function loadSavedImages() {
+      const bizImg = localStorage.getItem(STORAGE_KEY_BIZ_IMG);
+      const bizBox = document.getElementById('company-biz-preview-box');
+      const bizBtn = document.getElementById('btn-share-biz-img');
+      if (bizImg) {
+        bizBox.innerHTML = `<img src="${bizImg}" class="max-h-full max-w-full object-contain">`;
+        bizBtn.classList.remove('hidden');
+      }
 
-      if (imgData) {
-        box.innerHTML = `<img src="${imgData}" class="max-h-full max-w-full object-contain">`;
-        shareBtn.classList.remove('hidden');
-      } else {
-        box.innerHTML = `<span class="text-slate-400 text-[11px]">등록된 이미지가 없습니다.</span>`;
-        shareBtn.classList.add('hidden');
+      const cardImg = localStorage.getItem(STORAGE_KEY_CARD_IMG);
+      const cardBox = document.getElementById('company-card-preview-box');
+      const cardBtn = document.getElementById('btn-share-card-img');
+      if (cardImg) {
+        cardBox.innerHTML = `<img src="${cardImg}" class="max-h-full max-w-full object-contain">`;
+        cardBtn.classList.remove('hidden');
       }
     }
 
-    function shareBizImage() {
-      const imgData = localStorage.getItem(STORAGE_KEY_BIZ_IMG);
+    function shareStoredImage(type) {
+      const imgData = type === 'biz' ? localStorage.getItem(STORAGE_KEY_BIZ_IMG) : localStorage.getItem(STORAGE_KEY_CARD_IMG);
       if (!imgData) return;
 
       fetch(imgData).then(res => res.blob()).then(blob => {
-        const file = new File([blob], `까치방앗간_사업자등록증.png`, { type: blob.type });
+        const fileName = type === 'biz' ? '까치방앗간_사업자등록증.png' : '까치방앗간_정승욱_명함.png';
+        const file = new File([blob], fileName, { type: blob.type });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({ files: [file], title: '까치방앗간 사업자등록증' }).catch(() => {});
+          navigator.share({ files: [file], title: fileName }).catch(() => {});
         } else {
           const a = document.createElement('a');
           a.href = imgData;
-          a.download = `까치방앗간_사업자등록증.png`;
+          a.download = fileName;
           a.click();
         }
       });
     }
 
+    /* =====================================================================
+       세금계산서 집계 & 손익 관리
+       ===================================================================== */
     function renderTaxTable() {
       const tbody = document.getElementById('tax-table-body');
       const valid = orders.filter(o => o.status !== '주문취소');
@@ -2288,7 +2587,7 @@
 
     function exportFullBackup() {
       const backupData = {
-        version: "5.1",
+        version: "5.2",
         exportDate: new Date().toISOString(),
         orders: orders,
         clients: clients,
