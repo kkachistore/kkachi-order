@@ -46,10 +46,8 @@
     <!-- PC 탭 바 (관심 고객 탭 추가) -->
     <div class="hidden md:flex max-w-7xl mx-auto px-4 gap-6 text-sm font-semibold border-t border-slate-100">
       <button onclick="switchTab('new-order')" id="tab-btn-new-order" class="py-3 border-b-2 border-[#191f28] text-[#191f28]">신규 주문</button>
-      <button onclick="switchTab('order-list')" id="tab-btn-order-list" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">주문 내역 조회 <span id="badge-total-orders" class="ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full text-xs">0</span></button>
-      <button onclick="switchTab('leads')" id="tab-btn-leads" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28] flex items-center gap-1">
-        관심 고객 <span id="badge-leads-count" class="bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded-full text-xs font-bold">0</span>
-      </button>
+      <button onclick="switchTab('order-list')" id="tab-btn-order-list" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">주문 내역 조회</button>
+      <button onclick="switchTab('leads')" id="tab-btn-leads" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">관심 고객</button>
       <button onclick="switchTab('clients')" id="tab-btn-clients" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">거래처 및 이력 관리</button>
       <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">손익 관리</button>
       <button onclick="switchTab('tax')" id="tab-btn-tax" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">세금계산서 집계</button>
@@ -148,11 +146,12 @@
             <!-- 1. 발주 거래처 -->
             <div class="toss-card p-3.5 md:p-5 space-y-2.5">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <h3 class="font-bold text-xs md:text-sm text-slate-800">1. 발주 거래처</h3>
                   <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
                     <button type="button" id="client-type-direct" onclick="setClientTypeOption('직거래')" class="px-2.5 py-0.5 rounded-md bg-white text-blue-600 shadow-xs">직거래</button>
                     <button type="button" id="client-type-vendor" onclick="setClientTypeOption('벤더')" class="px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800">벤더</button>
+                    <button type="button" id="client-type-vendor-dest" onclick="setClientTypeOption('벤더 납품처')" class="px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800">벤더 납품처</button>
                   </div>
                 </div>
 
@@ -718,6 +717,7 @@
             <select id="edit-client-type" class="w-full p-2 border border-slate-200 rounded-xl outline-none bg-white font-bold">
               <option value="직거래">직거래</option>
               <option value="벤더">벤더</option>
+              <option value="벤더 납품처">벤더 납품처</option>
             </select>
           </div>
           <div>
@@ -930,21 +930,42 @@
     let lastLocalMutationTime = 0;
 
     function normalizeLeadNotes(leadObj) {
+      let rawList = [];
       if (Array.isArray(leadObj.notes) && leadObj.notes.length > 0) {
-        return leadObj.notes.map(n => String(n).trim()).filter(Boolean);
+        rawList = leadObj.notes.map(n => String(n).trim()).filter(Boolean);
+      } else if (typeof leadObj.notes === 'string' && leadObj.notes.trim()) {
+        rawList = leadObj.notes.split(/\r?\n/).map(n => n.trim()).filter(Boolean);
+      } else if (typeof leadObj.summary === 'string' && leadObj.summary.trim()) {
+        rawList = leadObj.summary.split(/\r?\n/).map(n => n.trim()).filter(Boolean);
       }
-      if (typeof leadObj.notes === 'string' && leadObj.notes.trim()) {
-        return leadObj.notes.split(/\r?\n/).map(n => n.trim()).filter(Boolean);
+      return rawList.filter(n => !n.endsWith('관심 고객 등록 완료'));
+    }
+
+    function formatLeadDateTime(dateVal) {
+      if (!dateVal) {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       }
-      if (typeof leadObj.summary === 'string' && leadObj.summary.trim()) {
-        return leadObj.summary.split(/\r?\n/).map(n => n.trim()).filter(Boolean);
+      const str = String(dateVal).trim();
+      const fullMatch = str.match(/(\d{4}-\d{2}-\d{2})[T\s]+(\d{2}:\d{2})/);
+      if (fullMatch) return `${fullMatch[1]} ${fullMatch[2]}`;
+      const d = new Date(str);
+      if (!isNaN(d.getTime()) && (str.includes(':') || str.includes('T') || str.includes('GMT'))) {
+        const y = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hr = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        return `${y}-${mo}-${day} ${hr}:${mi}`;
       }
-      return [];
+      const dateOnly = str.match(/\d{4}-\d{2}-\d{2}/);
+      if (dateOnly) return dateOnly[0];
+      return str.slice(0, 16);
     }
 
     // 기존 리드 데이터 정돈
     leads.forEach(l => {
-      l.createdAt = cleanDateFormat(l.createdAt);
+      l.createdAt = formatLeadDateTime(l.createdAt);
       l.notes = normalizeLeadNotes(l);
       l.summary = l.notes.join('\n');
     });
@@ -1024,16 +1045,16 @@
 
       const now = new Date();
       const today = cleanDateFormat(now);
-      const timeStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const fullNowStr = `${today} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
       const newLead = {
         id: `LEAD-${Date.now().toString().slice(-5)}`,
         name: name,
-        createdAt: today,
+        createdAt: fullNowStr,
         status: "진행중",
-        notes: [`[${timeStr}] 관심 고객 등록 완료`],
-        summary: `[${timeStr}] 관심 고객 등록 완료`,
-        lastContactedAt: `${today} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+        notes: [],
+        summary: "",
+        lastContactedAt: fullNowStr
       };
 
       leads.unshift(newLead);
@@ -1050,44 +1071,44 @@
 
       const activeLeads = leads.filter(l => l.status === '진행중');
       const countEl = document.getElementById('count-leads-total');
-      const badgeEl = document.getElementById('badge-leads-count');
       if (countEl) countEl.textContent = activeLeads.length;
-      if (badgeEl) badgeEl.textContent = activeLeads.length;
 
       if (activeLeads.length === 0) {
         container.innerHTML = '<div class="col-span-full toss-card p-6 text-center text-xs text-slate-400">등록된 관심 고객이 없습니다. 상단에서 상호명을 입력해 등록해 보세요.</div>';
         return;
       }
 
-      container.innerHTML = activeLeads.map(lead => `
-        <div class="toss-card p-3.5 space-y-2.5 bg-white border border-slate-200">
-          <div class="flex justify-between items-start gap-1">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1 cursor-pointer group" onclick="editLeadName('${lead.id}')" title="상호명 수정">
-                <span class="font-black text-sm text-slate-900 truncate group-hover:text-blue-600">${lead.name}</span>
-                <span class="text-slate-300 group-hover:text-blue-500 text-xs">✏️</span>
+      container.innerHTML = activeLeads.map(lead => {
+        const hasNotes = lead.notes && lead.notes.length > 0;
+        const displayCreatedAt = formatLeadDateTime(lead.createdAt);
+        return `
+        <div class="toss-card p-3 space-y-2 bg-white border border-slate-200 flex flex-col justify-between">
+          <div class="space-y-2">
+            <div class="flex justify-between items-center gap-2 border-b border-slate-100 pb-2">
+              <div class="flex items-center gap-1 cursor-pointer group min-w-0 flex-1" onclick="editLeadName('${lead.id}')" title="상호명 수정">
+                <span class="font-extrabold text-sm text-slate-900 truncate group-hover:text-blue-600">${lead.name}</span>
+                <span class="text-slate-300 group-hover:text-blue-500 text-[11px] shrink-0">✏️</span>
               </div>
-              <div class="text-[10px] text-slate-400 mt-0.5">등록일: ${cleanDateFormat(lead.createdAt).slice(5)}</div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-[10px] text-slate-400 font-mono">${displayCreatedAt}</span>
+                <button onclick="deleteLeadRecord('${lead.id}')" class="text-slate-300 hover:text-rose-500 font-bold px-1 text-xs leading-none" title="삭제">✕</button>
+              </div>
             </div>
-            
-            <button onclick="deleteLeadRecord('${lead.id}')" class="text-slate-300 hover:text-rose-500 font-bold p-1 text-sm leading-none" title="삭제">✕</button>
+
+            ${hasNotes ? `
+              <div class="bg-slate-50 px-2.5 py-2 rounded-xl border border-slate-100 text-xs space-y-1 max-h-32 overflow-y-auto">
+                ${lead.notes.map(n => `<div class="text-[11px] text-slate-700 leading-snug break-all">• ${n}</div>`).join('')}
+              </div>
+            ` : ''}
           </div>
 
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1 max-h-36 overflow-y-auto">
-            <div class="text-[10px] font-bold text-slate-500 mb-1">📝 상담 및 진행 메모:</div>
-            ${lead.notes && lead.notes.length > 0 ? lead.notes.map(n => `<div class="text-[11px] text-slate-700 leading-snug break-all">• ${n}</div>`).join('') : '<div class="text-[10px] text-slate-400">기록된 메모가 없습니다.</div>'}
+          <div class="flex items-center gap-1 pt-0.5">
+            <input type="text" id="input-note-${lead.id}" placeholder="메모 입력 후 Enter" class="flex-1 text-[11px] px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:ring-1 focus:ring-blue-500" onkeypress="if(event.key==='Enter') addLeadNote('${lead.id}')">
+            <button onclick="addLeadNote('${lead.id}')" class="toss-btn text-[11px] bg-slate-800 text-white font-bold px-2.5 py-1.5 rounded-lg shrink-0">추가</button>
+            <button onclick="copyLeadFollowUpMsg('${encodeURIComponent(lead.name)}')" class="toss-btn text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2.5 py-1.5 rounded-lg shrink-0">안부톡</button>
           </div>
-
-          <div class="flex items-center gap-1">
-            <input type="text" id="input-note-${lead.id}" placeholder="새 메모 입력 (예: 마켓컬리 단가 제안톡 발송)" class="flex-1 text-[11px] p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:ring-1 focus:ring-blue-500" onkeypress="if(event.key==='Enter') addLeadNote('${lead.id}')">
-            <button onclick="addLeadNote('${lead.id}')" class="toss-btn text-[10px] bg-slate-800 text-white font-bold px-3 py-2 rounded-lg shrink-0">메모추가</button>
-          </div>
-
-          <button onclick="copyLeadFollowUpMsg('${encodeURIComponent(lead.name)}')" class="w-full toss-btn text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-1.5 rounded-xl">
-            안부톡 복사
-          </button>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     function editLeadName(leadId) {
@@ -1186,12 +1207,19 @@
       currentClientType = type;
       const btnDirect = document.getElementById('client-type-direct');
       const btnVendor = document.getElementById('client-type-vendor');
-      if (type === '벤더') {
+      const btnVendorDest = document.getElementById('client-type-vendor-dest');
+      const inactiveClass = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
+
+      if (btnDirect) btnDirect.className = inactiveClass;
+      if (btnVendor) btnVendor.className = inactiveClass;
+      if (btnVendorDest) btnVendorDest.className = inactiveClass;
+
+      if (type === '벤더' && btnVendor) {
         btnVendor.className = 'px-2.5 py-0.5 rounded-md bg-white text-purple-600 shadow-xs font-bold';
-        btnDirect.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
-      } else {
+      } else if (type === '벤더 납품처' && btnVendorDest) {
+        btnVendorDest.className = 'px-2.5 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs font-bold';
+      } else if (btnDirect) {
         btnDirect.className = 'px-2.5 py-0.5 rounded-md bg-white text-blue-600 shadow-xs font-bold';
-        btnVendor.className = 'px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800';
       }
     }
 
@@ -1402,6 +1430,9 @@
 
     function getLatestPriceForProduct(clientName, productId) {
       if (!clientName) return null;
+      const matchedClient = clients.find(c => c.name.trim().toLowerCase() === clientName.trim().toLowerCase());
+      if (matchedClient && matchedClient.clientType === '벤더 납품처') return null;
+      if (currentClientType === '벤더 납품처') return null;
       for (let i = 0; i < orders.length; i++) {
         const o = orders[i];
         if (o.status !== '주문취소' && o.clientName.trim().toLowerCase() === clientName.trim().toLowerCase()) {
@@ -1479,7 +1510,7 @@
               <input type="number" value="${item.qty}" min="1" class="w-16 text-center py-1 bg-white border border-slate-300 rounded-md font-black text-sm text-[#191f28] shadow-xs outline-none focus:ring-2 focus:ring-blue-500" onchange="setItemQtyDirect(${idx}, this.value)">
               <button onclick="changeItemQty(${idx}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm">+</button>
             </div>
-            <div class="font-black text-slate-900 font-mono text-sm">
+            <div id="item-row-total-${idx}" class="font-black text-slate-900 font-mono text-sm">
               ${(item.price * item.qty).toLocaleString()}원
             </div>
           </div>
@@ -1545,9 +1576,13 @@
     }
 
     function setItemPriceDirect(idx, val) {
-      const p = parseInt(val, 10);
+      const p = val === '' ? 0 : parseInt(val, 10);
       if (isNaN(p) || p < 0) return;
       currentOrderItems[idx].price = p;
+      const rowTotalEl = document.getElementById(`item-row-total-${idx}`);
+      if (rowTotalEl) {
+        rowTotalEl.textContent = `${(p * currentOrderItems[idx].qty).toLocaleString()}원`;
+      }
       calculateNewOrderTotals();
     }
 
@@ -1738,7 +1773,7 @@
           <div onclick="selectClient('${c.id}')" class="p-2 hover:bg-slate-100 cursor-pointer border-b border-slate-50 last:border-0 text-xs">
             <div class="font-bold text-slate-800 flex items-center justify-between">
               <span>${c.name}</span>
-              <span class="text-[9px] ${c.clientType === '벤더' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-1.5 py-0.5 rounded">${c.clientType || '직거래'}</span>
+              <span class="text-[9px] ${c.clientType === '벤더' ? 'bg-purple-100 text-purple-700' : c.clientType === '벤더 납품처' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'} px-1.5 py-0.5 rounded">${c.clientType === '벤더 납품처' ? '벤더 납품처 🔒' : (c.clientType || '직거래')}</span>
             </div>
             <div class="text-[10px] text-slate-400 truncate">${c.receiverAddress || '기본 주소 없음'}</div>
           </div>
@@ -1837,7 +1872,7 @@
         vat = finalTotal - supply;
       }
 
-      document.getElementById('preview-items-subtotal').textContent = `${itemsTotal.toLocaleString()}원`;
+      document.getElementById('preview-items-subtotal').textContent = `${finalTotal.toLocaleString()}원`;
       document.getElementById('summary-supply').textContent = `${supply.toLocaleString()}원`;
       document.getElementById('summary-vat').textContent = `${vat.toLocaleString()}원`;
       document.getElementById('summary-total').textContent = `${finalTotal.toLocaleString()}원`;
@@ -2239,7 +2274,7 @@
 
             if (data.leads !== undefined) {
               leads = data.leads.filter(l => l.status !== "삭제").map(l => {
-                l.createdAt = cleanDateFormat(l.createdAt);
+                l.createdAt = formatLeadDateTime(l.createdAt);
                 l.notes = normalizeLeadNotes(l);
                 l.summary = l.notes.join('\n');
                 return l;
@@ -2708,7 +2743,7 @@
         msg = `[까치방앗간 입금안내]\n${order.clientName} 사장님, 접수된 주문의 입금 확인 부탁드립니다.\n\n` +
               `• 품목: ${order.itemsSummary}\n` +
               `• 입금액: ${order.totalPrice.toLocaleString()}원\n\n` +
-              `[입금 계좌]\n${SUPPLIER_INFO.bankBiz}\n\n확인 후 빠른 정산 처리 부탁드립니다.`;
+              `[입금 계좌]\n${SUPPLIER_INFO.bankBiz}`;
       }
 
       document.getElementById('drawer-msg-preview').value = msg;
@@ -2760,15 +2795,18 @@
         let cleanMemo = c.memo || '';
         if (cleanMemo.startsWith('{') && cleanMemo.includes('}')) cleanMemo = '';
 
-        const isVendor = (c.clientType === '벤더');
+        const cType = c.clientType || '직거래';
+        let badgeClass = 'bg-blue-100 text-blue-700';
+        if (cType === '벤더') badgeClass = 'bg-purple-100 text-purple-700';
+        else if (cType === '벤더 납품처') badgeClass = 'bg-indigo-100 text-indigo-700';
 
         entityMap.set(c.name, {
           id: c.id,
           name: c.name,
-          type: isVendor ? '벤더' : '직거래',
-          badgeClass: isVendor ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
-          isDirect: !isVendor,
-          bizNum: c.bizNum || '',
+          type: cType,
+          badgeClass: badgeClass,
+          isDirect: cType === '직거래',
+          bizNum: c.bizNum || (cType === '벤더 납품처' ? '🔒 벤더 납품처 (단가 잠금)' : ''),
           email: c.email || '',
           phone: c.receiverPhone || '',
           address: c.receiverAddress || '',
@@ -2795,31 +2833,40 @@
         const isOrderFromVendor = (o.clientType === '벤더') || (entityMap.has(o.clientName) && entityMap.get(o.clientName).type === '벤더');
 
         if (isOrderFromVendor && o.receiverName && o.receiverName !== o.clientName) {
-          const destKey = `${o.receiverName} (${o.clientName} 경유)`;
-          if (!entityMap.has(destKey)) {
-            entityMap.set(destKey, {
-              id: `DEST-${o.id}`,
-              name: o.receiverName,
-              vendorName: o.clientName,
-              type: `벤더 [${o.clientName}] 경유`,
-              badgeClass: 'bg-indigo-100 text-indigo-700',
-              isDirect: false,
-              bizNum: '🔒 벤더 경유 (단가 잠금)',
-              email: '',
-              phone: o.receiverPhone || '',
-              address: o.receiverAddress || '',
-              memo: '',
-              isTaxExempt: Boolean(o.isTaxExempt),
-              lastOrderDate: o.date,
-              orderCount: 1,
-              orders: [o]
-            });
+          if (entityMap.has(o.receiverName)) {
+            const existingDest = entityMap.get(o.receiverName);
+            existingDest.orderCount++;
+            existingDest.orders.push(o);
+            if (!existingDest.lastOrderDate || new Date(o.date) > new Date(existingDest.lastOrderDate)) {
+              existingDest.lastOrderDate = o.date;
+            }
           } else {
-            const dest = entityMap.get(destKey);
-            dest.orderCount++;
-            dest.orders.push(o);
-            if (!dest.lastOrderDate || new Date(o.date) > new Date(dest.lastOrderDate)) {
-              dest.lastOrderDate = o.date;
+            const destKey = `${o.receiverName} (${o.clientName} 경유)`;
+            if (!entityMap.has(destKey)) {
+              entityMap.set(destKey, {
+                id: `DEST-${o.id}`,
+                name: o.receiverName,
+                vendorName: o.clientName,
+                type: `벤더 납품처 (${o.clientName})`,
+                badgeClass: 'bg-indigo-100 text-indigo-700',
+                isDirect: false,
+                bizNum: '🔒 벤더 납품처 (단가 잠금)',
+                email: '',
+                phone: o.receiverPhone || '',
+                address: o.receiverAddress || '',
+                memo: '',
+                isTaxExempt: Boolean(o.isTaxExempt),
+                lastOrderDate: o.date,
+                orderCount: 1,
+                orders: [o]
+              });
+            } else {
+              const dest = entityMap.get(destKey);
+              dest.orderCount++;
+              dest.orders.push(o);
+              if (!dest.lastOrderDate || new Date(o.date) > new Date(dest.lastOrderDate)) {
+                dest.lastOrderDate = o.date;
+              }
             }
           }
         }
@@ -2886,7 +2933,26 @@
     function openClientEditModal(clientId) {
       document.getElementById('ocr-status-text').classList.add('hidden');
       if (clientId) {
-        const c = clients.find(x => x.id === clientId) || { id: clientId, name: '', clientType: '직거래', bizNum: '', email: '', isTaxExempt: false, receiverName: '', receiverPhone: '', receiverAddress: '', memo: '' };
+        let c = clients.find(x => x.id === clientId);
+        if (!c && clientId.startsWith('DEST-')) {
+          const ordId = clientId.replace('DEST-', '');
+          const ord = orders.find(o => o.id === ordId);
+          if (ord) {
+            c = {
+              id: clientId,
+              name: ord.receiverName || '',
+              clientType: '벤더 납품처',
+              bizNum: '',
+              email: '',
+              isTaxExempt: Boolean(ord.isTaxExempt),
+              receiverName: ord.receiverName || '',
+              receiverPhone: ord.receiverPhone || '',
+              receiverAddress: ord.receiverAddress || '',
+              memo: `벤더(${ord.clientName}) 경유 납품처`
+            };
+          }
+        }
+        if (!c) c = { id: clientId, name: '', clientType: '직거래', bizNum: '', email: '', isTaxExempt: false, receiverName: '', receiverPhone: '', receiverAddress: '', memo: '' };
         document.getElementById('client-modal-title').textContent = `${c.name || '거래처'} 정보 관리`;
         document.getElementById('edit-client-id').value = c.id;
         document.getElementById('edit-client-name').value = c.name;
@@ -3300,8 +3366,7 @@
     }
 
     function updateOrderCountBadge() {
-      const el = document.getElementById('badge-total-orders');
-      if (el) el.textContent = orders.filter(o => o.status !== '주문취소').length;
+      // 상단 탭 숫자 뱃지 비표시 처리됨
     }
   </script>
 </body>
