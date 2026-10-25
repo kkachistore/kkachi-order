@@ -33,7 +33,7 @@
       </div>
       
       <div class="flex items-center gap-1 shrink-0">
-        <!-- 선형 카메라 아이콘 단독 버튼 -->
+        <!-- 선형 카메라 아이콘 단독 버튼 (갤러리 최근 캡처 사진 1초 등록) -->
         <label class="toss-btn p-1.5 bg-blue-50 text-[#3182f6] hover:bg-blue-100 rounded-xl cursor-pointer shadow-xs flex items-center justify-center" title="대화 캡처 사진 올리기">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
@@ -83,7 +83,7 @@
         </div>
       </div>
 
-      <!-- [단건 카톡 주문 모드] -->
+      <!-- 단건 카톡 주문 모드 -->
       <div id="single-order-box" class="space-y-3 md:space-y-5">
         <div class="toss-card p-3 md:p-4">
           <div class="flex items-center justify-between mb-2">
@@ -315,17 +315,18 @@
       </div>
     </section>
 
-    <!-- 3. 관심 고객 탭 (리드) -->
+    <!-- 3. 관심 고객 탭 (원터치 붙여넣기 탑재) -->
     <section id="tab-leads" class="hidden space-y-3">
-      <!-- 롱터치 및 안내 영역 -->
-      <div id="lead-paste-zone" 
-           contenteditable="true" 
-           class="w-full border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 rounded-2xl p-3 text-center cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white select-none">
-        <div class="text-blue-600 font-extrabold text-xs flex items-center justify-center gap-1 pointer-events-none">
-          <span>📋 모바일은 캡처 복사 후 여기를 길게 꾹 눌러 [붙여넣기]</span>
-        </div>
-        <div class="text-[10px] text-slate-400 mt-0.5 pointer-events-none">
-          PC는 화면 어디서나 <b>Ctrl + V</b>를 누르면 즉시 분석됩니다.
+      
+      <!-- 모바일 원터치 붙여넣기 액션 박스 -->
+      <div class="toss-card p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 space-y-2">
+        <button onclick="readFromClipboardAndProcess()" class="w-full toss-btn bg-[#3182f6] hover:bg-blue-600 active:scale-95 text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <span>📋 클립보드 캡처 붙여넣기 (터치 1초)</span>
+        </button>
+        <div class="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
+          <span>📱 모바일: 카톡 캡처 후 위 버튼 톡 터치</span>
+          <span>💻 PC: <b>Ctrl + V</b></span>
         </div>
       </div>
 
@@ -340,9 +341,10 @@
         </div>
       </div>
 
+      <!-- 로딩 인디케이터 -->
       <div id="lead-ocr-spinner" class="hidden toss-card p-5 text-center space-y-2 bg-blue-50/50 border-blue-200">
         <div class="inline-block animate-spin rounded-full h-7 w-7 border-b-2 border-blue-600"></div>
-        <div class="text-xs font-bold text-blue-900" id="lead-ocr-msg">카카오톡 대화방 이미지 분석 중...</div>
+        <div class="text-xs font-bold text-blue-900" id="lead-ocr-msg">AI가 대화방 캡처를 분석하고 있습니다...</div>
       </div>
 
       <div id="leads-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
@@ -455,7 +457,7 @@
     </button>
   </nav>
 
-  <!-- [모달 1] 회사 정보 창고 (전체 복사 및 4대 서류 이미지 다운로드 완벽 복원) -->
+  <!-- [모달 1] 회사 정보 창고 -->
   <div id="company-info-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -463,10 +465,9 @@
         <button onclick="closeCompanyInfoModal()" class="text-slate-400 text-lg">✕</button>
       </div>
 
-      <!-- 전체 내용 원클릭 복사 버튼 -->
       <button onclick="copyAllCompanyText()" class="w-full toss-btn text-xs bg-slate-900 hover:bg-black text-white font-extrabold py-2.5 rounded-xl shadow-xs flex items-center justify-center gap-1.5">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-        <span>전체 내용(사업자/대표/계좌 등) 한 번에 복사</span>
+        <span>전체 내용 한 번에 복사</span>
       </button>
 
       <div class="space-y-2 text-xs">
@@ -513,11 +514,10 @@
           <button onclick="copyToClipboard('ceo@kkachistore.com')" class="toss-btn bg-white border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-700">복사</button>
         </div>
 
-        <!-- 4대 이미지 보관함 (사업자등록증, 통장사본, 명함, 견적서) -->
+        <!-- 4대 이미지 보관함 -->
         <div class="pt-2 border-t border-slate-100 space-y-2">
           <div class="text-[11px] font-black text-slate-700">📌 필수 서류 이미지 보관 및 공유</div>
 
-          <!-- 사업자등록증 -->
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-200/70 space-y-1">
             <div class="flex justify-between items-center">
               <span class="text-[10px] font-bold text-slate-700">사업자등록증</span>
@@ -534,7 +534,6 @@
             </button>
           </div>
 
-          <!-- 통장사본 -->
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-200/70 space-y-1">
             <div class="flex justify-between items-center">
               <span class="text-[10px] font-bold text-slate-700">통장사본</span>
@@ -551,7 +550,6 @@
             </button>
           </div>
 
-          <!-- 명함 -->
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-200/70 space-y-1">
             <div class="flex justify-between items-center">
               <span class="text-[10px] font-bold text-slate-700">대표 명함</span>
@@ -568,7 +566,6 @@
             </button>
           </div>
 
-          <!-- 공식 견적서 -->
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-200/70 space-y-1">
             <div class="flex justify-between items-center">
               <span class="text-[10px] font-bold text-blue-700">공식 견적서</span>
@@ -602,7 +599,7 @@
     </div>
   </div>
 
-  <!-- [모달 3] 설정 모달 (Gemini VLM API 키 입력 지원) -->
+  <!-- [모달 3] 설정 모달 -->
   <div id="config-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -616,7 +613,7 @@
       <div>
         <label class="text-[11px] font-bold text-blue-600 mb-0.5 block">Gemini API 키 (100% 인식 AI 엔진)</label>
         <input type="password" id="config-gemini-key" placeholder="AIzaSy..." class="w-full text-xs p-2 border border-blue-300 rounded-xl outline-none font-mono">
-        <span class="text-[10px] text-slate-400 block mt-1">Google AI Studio에서 발급받은 무료 키를 입력하면 카톡 캡처 상호명을 100% 오타 없이 읽어냅니다.</span>
+        <span class="text-[10px] text-slate-400 block mt-1">Google AI Studio에서 발급받은 키를 입력하면 카톡 캡처 상호명을 100% 오타 없이 읽어냅니다.</span>
       </div>
       <div class="flex justify-end gap-1.5 pt-1">
         <button onclick="closeConfigModal()" class="toss-btn text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl">닫기</button>
@@ -664,7 +661,6 @@
     let currentClientType = '직거래';
     let listFilter = 'all';
     let leadFilter = 'due';
-    let selectedOrderIds = new Set();
 
     window.openConfigModal = function() {
       const modal = document.getElementById('config-modal');
@@ -769,6 +765,37 @@
       if (tabId === 'tax') renderTaxTable();
     }
 
+    // 모바일 원클릭 붙여넣기 전용 함수 (롱터치 없이 버튼 터치 1회로 클립보드 이미지 흡수)
+    async function readFromClipboardAndProcess() {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+          alert("이 브라우저에서는 클립보드 다이렉트 읽기를 지원하지 않습니다.\n상단의 [📷] 카메라 아이콘을 눌러 최근 캡처 사진을 선택해주세요!");
+          return;
+        }
+
+        const items = await navigator.clipboard.read();
+        let imageBlob = null;
+
+        for (const item of items) {
+          const imageType = item.types.find(t => t.startsWith('image/'));
+          if (imageType) {
+            imageBlob = await item.getType(imageType);
+            break;
+          }
+        }
+
+        if (imageBlob) {
+          processLeadImage(imageBlob);
+        } else {
+          alert("클립보드에 복사된 이미지가 없습니다.\n카톡 화면을 먼저 캡처/복사한 후 버튼을 눌러주세요!");
+        }
+      } catch (err) {
+        console.warn("Clipboard read permission issue:", err);
+        // 권한 거부나 제한 환경 시 파일 선택창으로 깔끔하게 우회
+        document.getElementById('lead-capture-file-input').click();
+      }
+    }
+
     function handleGlobalPaste(e) {
       const clipboardData = e.clipboardData || window.clipboardData;
       if (!clipboardData) return;
@@ -785,8 +812,6 @@
 
       if (imageFile) {
         e.preventDefault();
-        const pasteZone = document.getElementById('lead-paste-zone');
-        if (pasteZone) pasteZone.innerText = '';
         processLeadImage(imageFile);
       }
     }
@@ -812,7 +837,7 @@
           const rawBase64 = base64Data.split(',')[1];
           const mimeType = imageBlob.type || 'image/png';
 
-          const prompt = "너는 B2B 영업 관리 전문가야. 이 카카오톡 오픈채팅 대화 캡처 이미지를 분석해줘. JSON 형식으로만 답해. 1. name: 상단 제목이나 상대방 닉네임에 적힌 거래처 상호명. 2. interest: 대화에서 언급된 관심 품목(참기름, 들기름, 선물세트, 생강청, 육수한알 등). 3. summary: 상대방의 최종 답변과 대화 요약 (예: '화명점 해운대점 점주들과 박스 구매 협의 후 나누기로 함').";
+          const prompt = "너는 B2B 영업 관리 전문가야. 이 카카오톡 오픈채팅 대화 캡처 이미지를 분석해줘. JSON 형식으로만 답해. 1. name: 상단 제목이나 상대방 닉네임에 적힌 거래처 상호명 (예: 감자마켓 익산어양점 점장). 2. interest: 대화에서 언급된 관심 품목(참기름, 들기름, 선물세트, 생강청, 육수한알 등). 3. summary: 상대방의 최종 답변과 핵심 대화 요약.";
 
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
@@ -841,9 +866,8 @@
         }
       }
 
-      // API 키 미입력 시 안내
       if (spinner) spinner.classList.add('hidden');
-      const fallbackName = prompt("Gemini API 키가 아직 설정되지 않았습니다.\n거래처(오픈채팅) 상호명을 입력해주세요:", "감자마켓 정관용수점 점장");
+      const fallbackName = prompt("Gemini API 키가 아직 설정되지 않았습니다.\n거래처(오픈채팅) 상호명을 입력해주세요:", "감자마켓 익산어양점 점장");
       if (fallbackName) {
         saveLeadRecord(fallbackName, "참기름, 들기름, 선물세트", "카탈로그 전송 및 단가 안내 완료");
       }
@@ -911,10 +935,10 @@
       container.innerHTML = displayList.map(lead => {
         const isOverdue = lead.nextContactDate <= todayStr;
         return `
-          <div class="toss-card p-3.5 space-y-2.5 bg-white border ${isOverdue ? 'border-amber-300' : 'border-slate-200'}">
+          <div class="toss-card p-3 space-y-2 bg-white border ${isOverdue ? 'border-amber-300' : 'border-slate-200'}">
             <div class="flex justify-between items-start">
               <div>
-                <span class="font-black text-sm text-slate-900">${lead.name}</span>
+                <span class="font-black text-xs md:text-sm text-slate-900">${lead.name}</span>
                 <div class="text-[10px] text-slate-400">등록일: ${lead.createdAt ? lead.createdAt.slice(0, 10) : '-'}</div>
               </div>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isOverdue ? 'bg-rose-100 text-rose-700' : 'bg-blue-50 text-blue-600'}">
@@ -1372,7 +1396,6 @@
       orders.unshift(newOrder);
       localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders));
 
-      // 백엔드 전송
       fetch(config.sheetUrl || DEFAULT_SHEET_URL, {
         method: 'POST',
         mode: 'no-cors',
