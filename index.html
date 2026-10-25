@@ -44,10 +44,13 @@
       </div>
     </div>
 
-    <!-- PC 탭 바 -->
+    <!-- PC 탭 바 (관심 고객 탭 추가) -->
     <div class="hidden md:flex max-w-7xl mx-auto px-4 gap-6 text-sm font-semibold border-t border-slate-100">
       <button onclick="switchTab('new-order')" id="tab-btn-new-order" class="py-3 border-b-2 border-[#191f28] text-[#191f28]">신규 주문</button>
       <button onclick="switchTab('order-list')" id="tab-btn-order-list" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">주문 내역 조회 <span id="badge-total-orders" class="ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full text-xs">0</span></button>
+      <button onclick="switchTab('leads')" id="tab-btn-leads" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28] flex items-center gap-1">
+        관심 고객 <span id="badge-leads-count" class="bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded-full text-xs font-bold">0</span>
+      </button>
       <button onclick="switchTab('clients')" id="tab-btn-clients" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">거래처 및 이력 관리</button>
       <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">손익 관리</button>
       <button onclick="switchTab('tax')" id="tab-btn-tax" class="py-3 border-b-2 border-transparent text-[#8b95a1] hover:text-[#191f28]">세금계산서 집계</button>
@@ -143,12 +146,11 @@
           <!-- 좌측 컬럼 -->
           <div class="lg:col-span-7 space-y-3 md:space-y-4">
             
-            <!-- 1. 발주 거래처 (벤더/직거래 토글 & 과세/면세 토글 탑재) -->
+            <!-- 1. 발주 거래처 -->
             <div class="toss-card p-3.5 md:p-5 space-y-2.5">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div class="flex items-center gap-2">
                   <h3 class="font-bold text-xs md:text-sm text-slate-800">1. 발주 거래처 (정산처)</h3>
-                  <!-- 거래처 구분 토글: 벤더 vs 직거래 -->
                   <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
                     <button type="button" id="client-type-direct" onclick="setClientTypeOption('직거래')" class="px-2.5 py-0.5 rounded-md bg-white text-blue-600 shadow-xs">직거래</button>
                     <button type="button" id="client-type-vendor" onclick="setClientTypeOption('벤더')" class="px-2.5 py-0.5 rounded-md text-slate-500 hover:text-slate-800">벤더</button>
@@ -365,7 +367,27 @@
       </div>
     </section>
 
-    <!-- 3. 거래처 및 이력 관리 탭 -->
+    <!-- [신규 추가] 3. 관심 고객 탭 (초경량 직접입력 & 타임스탬프 누적 메모) -->
+    <section id="tab-leads" class="hidden space-y-3 md:space-y-4">
+      <!-- 거래처 상호명 직접 등록 바 -->
+      <div class="toss-card p-3 bg-white border border-slate-200 flex gap-2 items-center">
+        <input type="text" id="input-new-lead-name" placeholder="관심 고객 상호명 입력 (예: 감자마켓 시티오씨엘점)" class="flex-1 text-xs md:text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-[#3182f6] font-bold" onkeypress="if(event.key==='Enter') createNewLeadDirect()">
+        <button onclick="createNewLeadDirect()" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white text-xs md:text-sm font-extrabold px-4 py-2.5 rounded-xl shadow-xs shrink-0">
+          + 등록
+        </button>
+      </div>
+
+      <!-- 리스트 헤더 -->
+      <div class="flex justify-between items-center px-1">
+        <span class="text-xs font-black text-slate-800">진행 중인 관심 고객 (<span id="count-leads-total" class="text-blue-600 font-bold">0</span>곳)</span>
+        <span class="text-[11px] text-slate-400">💡 상호명을 탭하면 이름을 변경할 수 있습니다.</span>
+      </div>
+
+      <!-- 카드 그리드 -->
+      <div id="leads-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </section>
+
+    <!-- 4. 거래처 및 이력 관리 탭 -->
     <section id="tab-clients" class="hidden space-y-3 md:space-y-4">
       <div class="toss-card p-3.5 md:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
         <div class="relative flex-1 max-w-md">
@@ -383,7 +405,7 @@
       <div id="clients-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
     </section>
 
-    <!-- 4. 손익 관리 탭 -->
+    <!-- 5. 손익 관리 탭 -->
     <section id="tab-analytics" class="hidden space-y-3 md:space-y-4">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4">
         <div class="toss-card p-3.5 md:p-4">
@@ -409,7 +431,7 @@
       </div>
     </section>
 
-    <!-- 5. 세금계산서 집계 탭 -->
+    <!-- 6. 세금계산서 집계 탭 -->
     <section id="tab-tax" class="hidden space-y-3">
       <div class="toss-card p-3.5 flex justify-between items-center gap-2">
         <span class="text-xs text-slate-600">홈택스 전자세금계산서 일괄등록 (면세 분리)</span>
@@ -455,7 +477,7 @@
     </div>
   </aside>
 
-  <!-- 하단 모바일 바 -->
+  <!-- 하단 모바일 바 (관심고객 탭 포함) -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 flex justify-around items-center z-30 shadow-lg text-[10px]">
     <button onclick="switchTab('new-order')" id="m-tab-new-order" class="flex flex-col items-center py-1 text-[#3182f6] font-bold">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -464,6 +486,10 @@
     <button onclick="switchTab('order-list')" id="m-tab-order-list" class="flex flex-col items-center py-1 text-slate-400">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
       주문내역
+    </button>
+    <button onclick="switchTab('leads')" id="m-tab-leads" class="flex flex-col items-center py-1 text-slate-400">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      관심고객
     </button>
     <button onclick="switchTab('clients')" id="m-tab-clients" class="flex flex-col items-center py-1 text-slate-400">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -737,7 +763,7 @@
     </div>
   </div>
 
-  <!-- [모달 5] 주문 내용 수정 모달 (2층 상하 배치: 상품명 100% 온전 노출) -->
+  <!-- [모달 5] 주문 내용 수정 모달 -->
   <div id="edit-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -787,7 +813,6 @@
   <script>
     const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbxqXlIJhc7VI6twzOA_6u-0PvZJ_0GDnQraUwo6XCTRARt--dd62iH6QOv0Kqdy8MY/exec";
 
-    // 대표님 확정: 공식 명칭 참기름 350mL 유지 & 풍부한 별칭(Aliases) 완벽 탑재
     let MASTER_PRODUCTS = [
       { 
         id: 'P01', 
@@ -866,7 +891,7 @@
     const SUPPLIER_INFO = {
       name: "까치방앗간",
       ceo: "정승욱",
-      bizNum: "123-45-67890",
+      bizNum: "609-31-63994",
       phone: "010-9715-9578",
       email: "ceo@kkachistore.com",
       address: "서울특별시 송파구 오금로 111, 801호",
@@ -876,6 +901,7 @@
 
     const STORAGE_KEY_ORDERS = 'kkachi_b2b_orders_v5';
     const STORAGE_KEY_CLIENTS = 'kkachi_b2b_clients_v5';
+    const STORAGE_KEY_LEADS = 'kkachi_b2b_leads_v5';
     const STORAGE_KEY_CONFIG = 'kkachi_b2b_config_v5';
     const STORAGE_KEY_BIZ_IMG = 'kkachi_b2b_biz_img_v5';
     const STORAGE_KEY_CARD_IMG = 'kkachi_b2b_card_img_v5';
@@ -884,6 +910,7 @@
 
     let orders = JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS)) || [];
     let clients = JSON.parse(localStorage.getItem(STORAGE_KEY_CLIENTS)) || [];
+    let leads = JSON.parse(localStorage.getItem(STORAGE_KEY_LEADS)) || [];
     let config = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG)) || { sheetUrl: DEFAULT_SHEET_URL };
 
     if (!config.sheetUrl && DEFAULT_SHEET_URL) {
@@ -896,11 +923,18 @@
     let currentSelectedOrderId = null;
     let currentDrawerMsgTab = 'order';
     let isTaxExemptOrder = false;
-    let currentClientType = '직거래'; // '직거래' vs '벤더'
+    let currentClientType = '직거래';
     let listFilter = 'all';
     let activeClientObj = null;
     let parsedBulkRows = [];
     let selectedOrderIds = new Set();
+
+    // 기존 리드 데이터 정돈
+    leads.forEach(l => {
+      l.createdAt = cleanDateFormat(l.createdAt);
+      if (!l.notes) l.notes = [];
+    });
+    localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
 
     window.addEventListener('DOMContentLoaded', () => {
       initProductModalList();
@@ -908,6 +942,7 @@
       renderActiveProductRows();
       renderOrdersTable();
       renderClientsList();
+      renderLeadsList(); // 관심 고객 렌더링
       refreshAnalytics();
       updateOrderCountBadge();
       updateSyncStatusUI(false);
@@ -929,6 +964,7 @@
       const titles = {
         'new-order': '신규 주문',
         'order-list': '주문 내역 조회',
+        'leads': '관심 고객',
         'clients': '거래처 및 이력 관리',
         'analytics': '손익 관리',
         'tax': '세금계산서 집계'
@@ -938,8 +974,9 @@
         document.getElementById('page-main-title').textContent = titles[tabId];
       }
 
-      ['new-order', 'order-list', 'clients', 'analytics', 'tax'].forEach(id => {
-        document.getElementById(`tab-${id}`).classList.toggle('hidden', id !== tabId);
+      ['new-order', 'order-list', 'leads', 'clients', 'analytics', 'tax'].forEach(id => {
+        const sec = document.getElementById(`tab-${id}`);
+        if (sec) sec.classList.toggle('hidden', id !== tabId);
         
         const btn = document.getElementById(`tab-btn-${id}`);
         if (btn) {
@@ -957,11 +994,166 @@
       });
 
       if (tabId === 'order-list') renderOrdersTable();
+      if (tabId === 'leads') renderLeadsList();
       if (tabId === 'clients') renderClientsList();
       if (tabId === 'analytics') refreshAnalytics();
       if (tabId === 'tax') renderTaxTable();
     }
 
+    // ==========================================
+    // [관심 고객 (Leads) 관리 기능]
+    // ==========================================
+    function createNewLeadDirect() {
+      const input = document.getElementById('input-new-lead-name');
+      const name = (input.value || '').trim();
+      if (!name) return alert('거래처 상호명을 입력해 주세요.');
+
+      const now = new Date();
+      const today = cleanDateFormat(now);
+      const timeStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const newLead = {
+        id: `LEAD-${Date.now().toString().slice(-5)}`,
+        name: name,
+        createdAt: today,
+        status: "진행중",
+        notes: [`[${timeStr}] 관심 고객 등록 완료`]
+      };
+
+      leads.unshift(newLead);
+      localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+      syncLeadToGoogleSheet(newLead);
+
+      input.value = '';
+      renderLeadsList();
+    }
+
+    function renderLeadsList() {
+      const container = document.getElementById('leads-cards-container');
+      if (!container) return;
+
+      const activeLeads = leads.filter(l => l.status === '진행중');
+      const countEl = document.getElementById('count-leads-total');
+      const badgeEl = document.getElementById('badge-leads-count');
+      if (countEl) countEl.textContent = activeLeads.length;
+      if (badgeEl) badgeEl.textContent = activeLeads.length;
+
+      if (activeLeads.length === 0) {
+        container.innerHTML = '<div class="col-span-full toss-card p-6 text-center text-xs text-slate-400">등록된 관심 고객이 없습니다. 상단에서 상호명을 입력해 등록해 보세요.</div>';
+        return;
+      }
+
+      container.innerHTML = activeLeads.map(lead => `
+        <div class="toss-card p-3.5 space-y-2.5 bg-white border border-slate-200">
+          <div class="flex justify-between items-start gap-1">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1 cursor-pointer group" onclick="editLeadName('${lead.id}')" title="상호명 수정">
+                <span class="font-black text-sm text-slate-900 truncate group-hover:text-blue-600">${lead.name}</span>
+                <span class="text-slate-300 group-hover:text-blue-500 text-xs">✏️</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">등록일: ${cleanDateFormat(lead.createdAt).slice(5)}</div>
+            </div>
+            
+            <button onclick="deleteLeadRecord('${lead.id}')" class="text-slate-300 hover:text-rose-500 font-bold p-1 text-sm leading-none" title="삭제">✕</button>
+          </div>
+
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1 max-h-36 overflow-y-auto">
+            <div class="text-[10px] font-bold text-slate-500 mb-1">📝 상담 및 진행 메모:</div>
+            ${lead.notes && lead.notes.length > 0 ? lead.notes.map(n => `<div class="text-[11px] text-slate-700 leading-snug break-all">• ${n}</div>`).join('') : '<div class="text-[10px] text-slate-400">기록된 메모가 없습니다.</div>'}
+          </div>
+
+          <div class="flex items-center gap-1">
+            <input type="text" id="input-note-${lead.id}" placeholder="새 메모 입력 (예: 마켓컬리 단가 제안톡 발송)" class="flex-1 text-[11px] p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:ring-1 focus:ring-blue-500" onkeypress="if(event.key==='Enter') addLeadNote('${lead.id}')">
+            <button onclick="addLeadNote('${lead.id}')" class="toss-btn text-[10px] bg-slate-800 text-white font-bold px-3 py-2 rounded-lg shrink-0">메모추가</button>
+          </div>
+
+          <button onclick="copyLeadFollowUpMsg('${encodeURIComponent(lead.name)}')" class="w-full toss-btn text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-1.5 rounded-xl">
+            안부톡 복사
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function editLeadName(leadId) {
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) return;
+      const newName = prompt("거래처 상호명을 수정하세요:", lead.name);
+      if (newName && newName.trim() && newName.trim() !== lead.name) {
+        lead.name = newName.trim();
+        const now = new Date();
+        const timeStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        if (!lead.notes) lead.notes = [];
+        lead.notes.unshift(`[${timeStr}] 상호명 변경 ➔ ${lead.name}`);
+        localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+        syncLeadToGoogleSheet(lead);
+        renderLeadsList();
+      }
+    }
+
+    function addLeadNote(leadId) {
+      const input = document.getElementById(`input-note-${leadId}`);
+      if (!input || !input.value.trim()) return;
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const now = new Date();
+      const timeStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      if (!lead.notes) lead.notes = [];
+      lead.notes.unshift(`[${timeStr}] ${input.value.trim()}`);
+      input.value = '';
+
+      localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+      syncLeadToGoogleSheet(lead);
+      renderLeadsList();
+    }
+
+    function deleteLeadRecord(leadId) {
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) return;
+      if (confirm(`[${lead.name}] 관심 고객 카드를 완전히 삭제하시겠습니까?`)) {
+        leads = leads.filter(l => l.id !== leadId);
+        localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+        lead.status = "삭제";
+        syncLeadToGoogleSheet(lead);
+        renderLeadsList();
+      }
+    }
+
+    function copyLeadFollowUpMsg(encodedName) {
+      const name = decodeURIComponent(encodedName);
+      const msg = `사장님 안녕하세요! 까치방앗간 정승욱입니다.\n지난번에 말씀 나누었던 참기름, 들기름 관련해서 안부 여쭙니다.\n매장에서 먼저 테스트해보실 수 있도록 샘플 준비해 드릴 수 있으니 편하게 말씀해 주세요. 감사합니다 ^^`;
+      navigator.clipboard.writeText(msg).then(() => alert(`[${name}] 안부톡이 복사되었습니다!`));
+    }
+
+    function syncLeadToGoogleSheet(lead) {
+      if (!config.sheetUrl) return;
+      fetch(config.sheetUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'lead_sync', lead: lead })
+      }).catch(err => console.error(err));
+    }
+
+    function cleanDateFormat(dateVal) {
+      if (!dateVal) return new Date().toISOString().slice(0, 10);
+      const str = String(dateVal);
+      const m = str.match(/\d{4}-\d{2}-\d{2}/);
+      if (m) return m[0];
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${mo}-${day}`;
+      }
+      return str.slice(0, 10);
+    }
+
+    // ==========================================
+    // [기존 원본 주문 & 거래처 & 세무 로직 유지]
+    // ==========================================
     function setClientTypeOption(type) {
       currentClientType = type;
       const btnDirect = document.getElementById('client-type-direct');
@@ -1180,7 +1372,6 @@
       document.getElementById('product-select-modal').classList.add('hidden');
     }
 
-    // P01~P09 고유 ID 기반 직전 단가 실시간 역추적
     function getLatestPriceForProduct(clientName, productId) {
       if (!clientName) return null;
       for (let i = 0; i < orders.length; i++) {
@@ -1337,7 +1528,6 @@
       renderActiveProductRows();
     }
 
-    // AI 파싱 및 벤더/직거래 1차 자동 판별 (확정 별칭 완벽 반영)
     function parseRawOrderText() {
       if (isCurrentOrderSaved) {
         alert("이미 저장이 완료된 주문입니다. 새로운 주문을 작성하시려면 상단의 [새 주문 작성 (초기화)] 버튼을 눌러주세요.");
@@ -1490,7 +1680,6 @@
       if (address) document.getElementById('order-receiver-address').value = address;
       if (memo) document.getElementById('order-memo').value = memo;
 
-      // 벤더 vs 직거래 AI 1차 판별
       let autoDetectedType = '직거래';
       if (/위탁|벤더|공급처|원청|발주처/i.test(raw) || (clientName && clientName.includes('베러픽'))) {
         autoDetectedType = '벤더';
@@ -1556,7 +1745,6 @@
       setClientTypeOption(client.clientType || '직거래');
       setTaxType(Boolean(client.isTaxExempt));
 
-      // 과거 주문 DB에서 배송지 이력 실시간 추출
       const pastAddresses = [];
       orders.forEach(o => {
         if (o.clientName.trim().toLowerCase() === client.name.trim().toLowerCase() && o.receiverAddress) {
@@ -1646,12 +1834,12 @@
         lines.push(`• 품목을 담아주세요.`);
       } else {
         items.forEach(it => {
-          lines.push(`• ${it.name} × ${it.qty}개 (${(it.price * it.qty).toLocaleString()}원)\n`);
+          lines.push(`• ${it.name} × ${it.qty}개 (${(it.price * it.qty).toLocaleString()}원)`);
         });
       }
 
       if (shippingFee > 0) {
-        lines.push(`• 배송비: ${shippingFee.toLocaleString()}원\n`);
+        lines.push(`• 배송비: ${shippingFee.toLocaleString()}원`);
       }
 
       lines.push(`──────────────`);
@@ -1788,6 +1976,10 @@
       });
     }
 
+    function saveOrdersData(shouldSync = true) {
+      localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders));
+    }
+
     function saveNewOrder() {
       const clientName = document.getElementById('order-client-name').value.trim();
       const receiverName = document.getElementById('order-receiver-name').value.trim() || clientName;
@@ -1856,7 +2048,7 @@
         bizNum,
         email: clientEmail,
         isTaxExempt: isTaxExemptOrder,
-        clientType: currentClientType, // '직거래' vs '벤더'
+        clientType: currentClientType,
         receiverName,
         receiverPhone,
         receiverAddress,
@@ -1975,7 +2167,6 @@
         .then(res => res.json())
         .then(data => {
           if (data) {
-            // 시트 데이터가 0건이면 로컬도 즉시 0건으로 비움
             if (data.orders !== undefined) {
               orders = data.orders.map(o => {
                 if (!o.items || o.items.length === 0) {
@@ -2008,6 +2199,16 @@
               clients = data.clients;
               localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
               renderClientsList();
+            }
+
+            if (data.leads !== undefined) {
+              leads = data.leads.filter(l => l.status !== "삭제").map(l => {
+                l.createdAt = cleanDateFormat(l.createdAt);
+                if (!l.notes) l.notes = [];
+                return l;
+              });
+              localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+              renderLeadsList();
             }
 
             if (data.items && data.items.length > 0) {
@@ -2454,9 +2655,9 @@
         msg = `[까치방앗간 주문확인]\n${order.clientName} 사장님, 주문이 정상 접수되었습니다.\n\n` +
               `[주문 내역]\n` +
               (order.items && order.items.length > 0 ? 
-                order.items.map(i => `• ${i.name} × ${i.qty}개 (${(i.price * i.qty).toLocaleString()}원)\n`).join('') : `• ${order.itemsSummary}\n\n`) +
-              (order.shippingFee > 0 ? `• 배송비: ${order.shippingFee.toLocaleString()}원\n\n` : '') +
-              `──────────────\n최종 결제금액: ${order.totalPrice.toLocaleString()}원 ${order.isTaxExempt ? '(면세)' : '(VAT포함)'}\n\n` +
+                order.items.map(i => `• ${i.name} × ${i.qty}개 (${(i.price * i.qty).toLocaleString()}원)`).join('\n') : `• ${order.itemsSummary}\n`) +
+              (order.shippingFee > 0 ? `\n• 배송비: ${order.shippingFee.toLocaleString()}원` : '') +
+              `\n──────────────\n최종 결제금액: ${order.totalPrice.toLocaleString()}원 ${order.isTaxExempt ? '(면세)' : '(VAT포함)'}\n\n` +
               `[입금 계좌]\n${SUPPLIER_INFO.bankBiz}\n\n` +
               `[배송지 정보]\n• 수령인: ${order.receiverName} 님 ${order.receiverPhone ? `(${order.receiverPhone})` : ''}\n• 배송주소: ${order.receiverAddress}\n` +
               (order.memo ? `• 요청사항: ${order.memo}\n` : '') +
@@ -2511,7 +2712,6 @@
       }
     }
 
-    // 직거래 vs 벤더 구분 정확 반영 CRM
     function renderClientsList() {
       const container = document.getElementById('clients-cards-container');
       const search = (document.getElementById('client-search-box')?.value || '').toLowerCase();
@@ -2555,7 +2755,6 @@
           }
         }
 
-        // '벤더' 주문인 경우에만 수령인을 경유처로 분리 생성 (직거래 주문은 절대 분리 안 함)
         const isOrderFromVendor = (o.clientType === '벤더') || (entityMap.has(o.clientName) && entityMap.get(o.clientName).type === '벤더');
 
         if (isOrderFromVendor && o.receiverName && o.receiverName !== o.clientName) {
@@ -2773,6 +2972,88 @@
       alert("거래처 정보가 저장되었습니다.");
     }
 
+    function openEditOrderModal() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+
+      const container = document.getElementById('edit-modal-items');
+      container.innerHTML = order.items.map((it, idx) => `
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
+          <div class="font-extrabold text-slate-800 text-xs">${it.name}</div>
+          <div class="flex justify-between items-center gap-2">
+            <div class="flex items-center gap-1">
+              <span class="text-slate-500 font-bold">수량:</span>
+              <input type="number" id="edit-item-qty-${idx}" value="${it.qty}" min="0" class="w-14 text-center p-1 bg-white border border-slate-300 rounded font-bold">
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-500 font-bold">단가:</span>
+              <input type="number" id="edit-item-price-${idx}" value="${it.price}" step="100" min="0" class="w-20 text-right p-1 bg-white border border-slate-300 rounded font-bold font-mono">
+              <span>원</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('edit-shipping-fee').value = order.shippingFee || 0;
+      document.getElementById('edit-reason-input').value = '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditOrderModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    function submitOrderEdit() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+
+      const reason = document.getElementById('edit-reason-input').value.trim() || '관리자 수기 변경';
+      const newShippingFee = parseInt(document.getElementById('edit-shipping-fee').value, 10) || 0;
+
+      let newItems = [];
+      order.items.forEach((it, idx) => {
+        const q = parseInt(document.getElementById(`edit-item-qty-${idx}`).value, 10) || 0;
+        const p = parseInt(document.getElementById(`edit-item-price-${idx}`).value, 10) || 0;
+        if (q > 0) {
+          newItems.push({ ...it, qty: q, price: p });
+        }
+      });
+
+      if (newItems.length === 0) return alert("최소 1개 이상의 품목 수량이 1개 이상이어야 합니다.");
+
+      order.items = newItems;
+      order.shippingFee = newShippingFee;
+      order.totalQty = newItems.reduce((a, c) => a + c.qty, 0);
+
+      let itemsTotal = newItems.reduce((a, c) => a + (c.price * c.qty), 0);
+      const finalTotal = itemsTotal + newShippingFee;
+
+      if (order.isTaxExempt) {
+        order.supplyPrice = finalTotal;
+        order.vat = 0;
+      } else {
+        order.supplyPrice = Math.round(finalTotal / 1.1);
+        order.vat = finalTotal - order.supplyPrice;
+      }
+      order.totalPrice = finalTotal;
+
+      let summaryStr = newItems.map(i => `${i.name} ${i.qty}개`).join(', ');
+      if (newShippingFee > 0) summaryStr += ` (택배비 ${newShippingFee.toLocaleString()}원)`;
+      order.itemsSummary = summaryStr;
+
+      order.status = '주문변경';
+      if (!order.auditLogs) order.auditLogs = [];
+      order.auditLogs.push(`[${new Date().toISOString().slice(0,16).replace('T',' ')}] 내용 수정: ${reason} (총 ${finalTotal.toLocaleString()}원)`);
+
+      saveOrdersData();
+      syncOrderToGoogleSheet(order);
+      renderOrdersTable();
+      refreshAnalytics();
+      closeEditOrderModal();
+      openOrderDrawer(order.id);
+      alert("주문 내용이 정상 수정되었습니다.");
+    }
+
     function openCompanyInfoModal() {
       document.getElementById('company-info-modal').classList.remove('hidden');
     }
@@ -2828,4 +3109,163 @@
       }
     }
 
-    function shareStored
+    function shareStoredImage(type) {
+      let base64 = null;
+      let filename = '';
+      if (type === 'biz') {
+        base64 = localStorage.getItem(STORAGE_KEY_BIZ_IMG);
+        filename = '까치방앗간_사업자등록증.png';
+      } else if (type === 'card') {
+        base64 = localStorage.getItem(STORAGE_KEY_CARD_IMG);
+        filename = '까치방앗간_정승욱_명함.png';
+      } else if (type === 'quote') {
+        base64 = localStorage.getItem(STORAGE_KEY_QUOTE_IMG);
+        filename = '까치방앗간_공식견적서.png';
+      }
+
+      if (!base64) return alert("등록된 이미지가 없습니다.");
+
+      fetch(base64)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+              files: [file],
+              title: filename
+            }).catch(() => {});
+          } else {
+            const a = document.createElement('a');
+            a.download = filename;
+            a.href = base64;
+            a.click();
+          }
+        });
+    }
+
+    function openConfigModal() {
+      document.getElementById('config-sheet-url').value = config.sheetUrl || '';
+      document.getElementById('config-modal').classList.remove('hidden');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('config-modal').classList.add('hidden');
+    }
+
+    function saveConfigSheetUrl() {
+      const url = document.getElementById('config-sheet-url').value.trim();
+      config.sheetUrl = url;
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+      closeConfigModal();
+      updateSyncStatusUI(false);
+      if (url) fetchLatestFromGoogleSheet(true);
+    }
+
+    function refreshAnalytics() {
+      const validOrders = orders.filter(o => o.status !== '주문취소');
+      const totalSales = validOrders.reduce((a, c) => a + (c.supplyPrice || 0), 0);
+      const totalVat = validOrders.reduce((a, c) => a + (c.vat || 0), 0);
+      const totalQty = validOrders.reduce((a, c) => a + (c.totalQty || 0), 0);
+      const unpaidTotal = validOrders.filter(o => o.paymentStatus !== 'paid').reduce((a, c) => a + (c.totalPrice || 0), 0);
+
+      document.getElementById('stat-monthly-sales').textContent = `${totalSales.toLocaleString()}원`;
+      document.getElementById('stat-monthly-vat').textContent = `${totalVat.toLocaleString()}원`;
+      document.getElementById('stat-monthly-qty').textContent = `${totalQty.toLocaleString()}개`;
+      document.getElementById('stat-unpaid-total').textContent = `${unpaidTotal.toLocaleString()}원`;
+
+      const prodMap = {};
+      MASTER_PRODUCTS.forEach(p => { prodMap[p.id] = { name: p.name, qty: 0 }; });
+
+      validOrders.forEach(o => {
+        if (o.items && o.items.length > 0) {
+          o.items.forEach(it => {
+            if (prodMap[it.id]) prodMap[it.id].qty += it.qty;
+          });
+        }
+      });
+
+      const summaryContainer = document.getElementById('analytics-product-summary');
+      if (summaryContainer) {
+        summaryContainer.innerHTML = Object.values(prodMap).map(p => `
+          <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center">
+            <span class="text-slate-600 truncate max-w-[110px]">${p.name}</span>
+            <span class="font-bold text-slate-900 font-mono">${p.qty}개</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderTaxTable() {
+      const validOrders = orders.filter(o => o.status !== '주문취소');
+      const clientMap = new Map();
+
+      validOrders.forEach(o => {
+        const key = `${o.clientName}_${o.isTaxExempt ? '면세' : '과세'}`;
+        if (!clientMap.has(key)) {
+          clientMap.set(key, {
+            name: o.clientName,
+            bizNum: o.bizNum || '-',
+            isExempt: o.isTaxExempt,
+            supply: 0,
+            vat: 0,
+            total: 0
+          });
+        }
+        const row = clientMap.get(key);
+        row.supply += (o.supplyPrice || 0);
+        row.vat += (o.vat || 0);
+        row.total += (o.totalPrice || 0);
+      });
+
+      const tbody = document.getElementById('tax-table-body');
+      if (tbody) {
+        const list = Array.from(clientMap.values());
+        tbody.innerHTML = list.length === 0 ? '<tr><td colspan="6" class="p-4 text-center text-slate-400">집계 데이터가 없습니다.</td></tr>' :
+          list.map(r => `
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-bold">${r.name}</td>
+              <td class="p-3 font-mono">${r.bizNum}</td>
+              <td class="p-3 text-center">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${r.isExempt ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'}">
+                  ${r.isExempt ? '면세' : '과세'}
+                </span>
+              </td>
+              <td class="p-3 text-right font-mono">${r.supply.toLocaleString()}원</td>
+              <td class="p-3 text-right font-mono">${r.vat.toLocaleString()}원</td>
+              <td class="p-3 text-right font-mono font-bold">${r.total.toLocaleString()}원</td>
+            </tr>
+          `).join('');
+      }
+    }
+
+    function downloadHometaxExcel() {
+      const validOrders = orders.filter(o => o.status !== '주문취소');
+      const rows = [];
+
+      validOrders.forEach(o => {
+        rows.push({
+          "공급받는자 사업자등록번호": o.bizNum || "",
+          "공급받는자 상호": o.clientName,
+          "공급받는자 성명": o.receiverName,
+          "공급받는자 이메일": o.email || "",
+          "작성일자": o.date ? o.date.slice(0, 10).replace(/-/g, '') : '',
+          "공급가액": o.supplyPrice || 0,
+          "세액": o.vat || 0,
+          "품목명": o.itemsSummary,
+          "비고": o.isTaxExempt ? '면세' : '과세'
+        });
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "전자세금계산서");
+      XLSX.writeFile(wb, `홈택스_일괄등록_${new Date().toISOString().slice(2,10).replace(/-/g,'')}.xlsx`);
+    }
+
+    function updateOrderCountBadge() {
+      const el = document.getElementById('badge-total-orders');
+      if (el) el.textContent = orders.filter(o => o.status !== '주문취소').length;
+    }
+  </script>
+</body>
+</html>
