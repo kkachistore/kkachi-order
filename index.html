@@ -1048,7 +1048,16 @@
     }
 
     function ensureOrderItemsArray(o) {
-      if (o.items && Array.isArray(o.items) && o.items.length > 0) return o.items;
+      if (o.items && Array.isArray(o.items) && o.items.length > 0) {
+        const dedupMap = new Map();
+        o.items.forEach(it => {
+          if (it && (it.id || it.name)) {
+            dedupMap.set(it.id || it.name, it);
+          }
+        });
+        o.items = Array.from(dedupMap.values());
+        return o.items;
+      }
       const reconstructed = [];
       const summary = o.itemsSummary || '';
       MASTER_PRODUCTS.forEach(mp => {
