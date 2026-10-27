@@ -1010,12 +1010,9 @@
         <label class="text-[11px] font-semibold text-slate-500 mb-0.5 block">웹 앱 URL</label>
         <input type="text" id="config-sheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2 border border-slate-200 rounded-xl outline-none font-mono">
       </div>
-      <div class="bg-blue-50/70 border border-blue-200 p-3 rounded-xl space-y-2 text-xs">
-        <div class="font-extrabold text-blue-900">🚀 구글 시트 대안2(단일 통합 DB) 자동 반영</div>
-        <p class="text-[11px] text-blue-700 leading-relaxed">엑셀을 직접 복사·붙여넣기 하지 않아도, 아래 버튼을 누르면 <b>대안2(1품목 1행 단일 통합 주문내역)</b>와 <b>중복 제거된 거래처 74곳</b>이 구글 시트에 즉시 세팅됩니다.</p>
-        <button type="button" onclick="triggerOneClickCleanDbSetup()" id="btn-trigger-clean-db" class="w-full toss-btn bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-xs">
-          대안2(1품목 1행) & 정리된 거래처 74곳 자동 적용하기
-        </button>
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed space-y-1">
+        <div class="font-bold text-slate-800">💡 구글 시트 실시간 연동</div>
+        <p class="text-[11px] text-slate-500">Apps Script 웹 앱 배포 URL을 입력하고 저장하시면 주문 접수, 상태 변경, 거래처 및 관심고객 관리가 구글 시트와 실시간으로 안전하게 동기화됩니다.</p>
       </div>
       <div class="flex justify-end gap-1.5 pt-1">
         <button onclick="closeConfigModal()" class="toss-btn text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl">닫기</button>
@@ -4924,41 +4921,6 @@
       closeConfigModal();
       updateSyncStatusUI(false);
       if (url) fetchLatestFromGoogleSheet(true);
-    }
-
-    function triggerOneClickCleanDbSetup() {
-      const url = (document.getElementById('config-sheet-url')?.value || config.sheetUrl || '').trim();
-      if (!url) return alert("먼저 웹 앱 URL을 입력해 주세요.");
-      config.sheetUrl = url;
-      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
-
-      const btn = document.getElementById('btn-trigger-clean-db');
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = "구글 시트 자동 정비 및 74곳 거래처 반영 중...";
-      }
-
-      fetch(url, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'apply_clean_db' })
-      }).then(() => {
-        setTimeout(() => {
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "정리된 거래처 74곳 & 신규 DB 자동 적용하기";
-          }
-          closeConfigModal();
-          fetchLatestFromGoogleSheet(true);
-        }, 1800);
-      }).catch(err => {
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "정리된 거래처 74곳 & 신규 DB 자동 적용하기";
-        }
-        alert("요청 전송 중 오류가 발생했습니다. URL을 확인해 주세요.");
-      });
     }
 
     function refreshAnalytics() {
