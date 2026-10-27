@@ -1011,10 +1011,10 @@
         <input type="text" id="config-sheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2 border border-slate-200 rounded-xl outline-none font-mono">
       </div>
       <div class="bg-blue-50/70 border border-blue-200 p-3 rounded-xl space-y-2 text-xs">
-        <div class="font-extrabold text-blue-900">🚀 구글 시트 DB 원클릭 자동 반영</div>
-        <p class="text-[11px] text-blue-700 leading-relaxed">엑셀을 직접 복사·붙여넣기 하지 않아도, 아래 버튼을 누르면 <b>중복 제거된 74곳 거래처</b>와 <b>신규 안전 DB 구조(U열 품목원본)</b>가 구글 시트에 자동으로 세팅됩니다.</p>
+        <div class="font-extrabold text-blue-900">🚀 구글 시트 대안2(단일 통합 DB) 자동 반영</div>
+        <p class="text-[11px] text-blue-700 leading-relaxed">엑셀을 직접 복사·붙여넣기 하지 않아도, 아래 버튼을 누르면 <b>대안2(1품목 1행 단일 통합 주문내역)</b>와 <b>중복 제거된 거래처 74곳</b>이 구글 시트에 즉시 세팅됩니다.</p>
         <button type="button" onclick="triggerOneClickCleanDbSetup()" id="btn-trigger-clean-db" class="w-full toss-btn bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-xs">
-          정리된 거래처 74곳 & 신규 DB 자동 적용하기
+          대안2(1품목 1행) & 정리된 거래처 74곳 자동 적용하기
         </button>
       </div>
       <div class="flex justify-end gap-1.5 pt-1">
@@ -2884,8 +2884,13 @@
         auditLogs: [`[${dateStr}] ${initialStatus} (${currentClientType}, ${isTaxExemptOrder ? '면세' : '과세'})`]
       };
 
+      newOrder.createdAtTimestamp = Date.now();
       orders.unshift(newOrder);
       saveOrdersData();
+      renderOrdersTable();
+      refreshAnalytics();
+      renderClientsList();
+      updateOrderCountBadge();
 
       let client = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
       if (!client) {
@@ -3028,13 +3033,21 @@
           }
           if (data) {
             if (data.orders !== undefined) {
-              orders = data.orders.map(o => {
+              const sheetOrders = data.orders.map(o => {
                 const parsedMemo = parseOrderMemoFields(o.memo, o.internalMemo);
                 o.memo = parsedMemo.memo;
                 o.internalMemo = parsedMemo.internalMemo;
                 ensureOrderItemsArray(o);
                 return o;
               });
+              
+              // 대안2 안전 동기화: 시트 반영 대기 중인 로컬 신규 주문 보존 (최근 15분 이내 저장된 로컬 주문)
+              const sheetIds = new Set(sheetOrders.map(o => o.id));
+              const pendingLocal = orders.filter(loc => {
+                return !sheetIds.has(loc.id) && loc.createdAtTimestamp && (Date.now() - loc.createdAtTimestamp < 15 * 60 * 1000);
+              });
+              
+              orders = [...pendingLocal, ...sheetOrders];
               saveOrdersData(false);
               renderOrdersTable();
               refreshAnalytics();
