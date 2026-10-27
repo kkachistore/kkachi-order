@@ -515,11 +515,11 @@
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-500 font-bold whitespace-nowrap">
               <tr>
-                <th class="py-3.5 px-4 w-32">구분</th>
-                <th class="py-3.5 px-4 w-56">거래처 / 납품처명 <span class="text-[10px] text-blue-600 font-normal">(클릭시 이력 펼침)</span></th>
-                <th class="py-3.5 px-4 min-w-[240px]">연락처 및 기본 출고지</th>
-                <th class="py-3.5 px-4 min-w-[280px]">품목별 마지막 발주일 (클릭시 재주문톡 복사)</th>
-                <th class="py-3.5 px-4 w-28 text-center">누적 거래</th>
+                <th class="py-3.5 px-4 w-28">구분</th>
+                <th class="py-3.5 px-4 w-48">거래처 / 납품처명 <span class="text-[10px] text-blue-600 font-normal">(클릭시 이력 펼침)</span></th>
+                <th class="py-3.5 px-4 min-w-[260px] max-w-[340px]">연락처 및 기본 출고지 (특이사항)</th>
+                <th class="py-3.5 px-4 min-w-[240px]">품목별 마지막 발주일 (재주문)</th>
+                <th class="py-3.5 px-4 w-24 text-center">누적 거래</th>
                 <th class="py-3.5 px-4 w-36 text-right">기본정보 / 이력</th>
               </tr>
             </thead>
@@ -4273,65 +4273,76 @@
     // 과거 거래 내역에서 각 품목별 [품목명 / 수량 / @당시단가 / 금액]이 행과 열로 반듯하게 맞춰진 테이블 생성 헬퍼
     function buildClientHistoryTableHtml(entity) {
       const clientOrders = (entity && entity.orders ? [...entity.orders] : []).sort((a, b) => {
-        return new Date(String(b.date || '').replace(' ', 'T')) - new Date(String(a.date || '').replace(' ', 'T'));
+        return new Date(String(b.date || "").replace(" ", "T")) - new Date(String(a.date || "").replace(" ", "T"));
       });
-      const isVendorDest = entity && entity.rawType === '벤더 납품처';
+      const isVendorDest = entity && entity.rawType === "벤더 납품처";
 
       if (clientOrders.length === 0) {
-        return '<div class="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200/90 shadow-xs">아직 등록된 주문 내역이 없습니다.</div>';
+        return "<div class=\"p-6 text-center text-xs text-slate-400 bg-white rounded-xl border border-slate-200\">등록된 과거 주문 내역이 없습니다.</div>";
       }
 
       return `
-        <div class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead class="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-bold text-xs">
-              <tr>
-                <th class="py-3 px-4 w-40 text-slate-700">주문일시 / 번호</th>
-                <th class="py-3 px-4 text-slate-700">주문 품목명</th>
-                <th class="py-3 px-4 w-24 text-right text-slate-700">수량</th>
-                <th class="py-3 px-4 w-32 text-right text-slate-700">당시 거래단가</th>
-                <th class="py-3 px-4 w-32 text-right text-slate-700">품목 소계</th>
-                <th class="py-3 px-4 w-36 text-right text-slate-700">주문 총액</th>
-                <th class="py-3 px-4 w-44 text-center text-slate-700">입금 · 출고 · 송장</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              ${clientOrders.map((ord, ordIdx) => {
-                const items = ensureOrderItemsArray(ord);
-                const itemRows = (items && items.length > 0) ? items : [{ name: ord.itemsSummary || '-', qty: ord.totalQty || 1, price: ord.totalPrice || 0 }];
-                const isEvenOrd = ordIdx % 2 === 0;
-                const ordBgClass = isEvenOrd ? 'bg-white' : 'bg-slate-50/40';
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-bold text-xs">
+                <tr>
+                  <th class="py-2.5 px-3.5 w-36 whitespace-nowrap">날짜</th>
+                  <th class="py-2.5 px-3.5 min-w-[180px]">품목</th>
+                  <th class="py-2.5 px-3.5 w-20 text-right whitespace-nowrap">수량</th>
+                  <th class="py-2.5 px-3.5 w-28 text-right whitespace-nowrap">당시 거래단가</th>
+                  <th class="py-2.5 px-3.5 w-28 text-right whitespace-nowrap">소계</th>
+                  <th class="py-2.5 px-3.5 w-32 text-right whitespace-nowrap">주문총액</th>
+                  <th class="py-2.5 px-3.5 min-w-[180px]">특이사항 (메모)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${clientOrders.map(ord => {
+                  const items = ensureOrderItemsArray(ord);
+                  const itemRows = (items && items.length > 0) ? items : [{ name: ord.itemsSummary || "-", qty: ord.totalQty || 1, price: ord.totalPrice || 0 }];
+                  
+                  const memoParts = [];
+                  if (ord.internalMemo) memoParts.push(`📌 ${ord.internalMemo}`);
+                  if (ord.memo) memoParts.push(ord.memo);
+                  const memoText = memoParts.length > 0 ? memoParts.join(" / ") : "-";
 
-                return itemRows.map((it, idx) => `
-                  <tr onclick="switchTab('order-list'); openOrderDrawer('${ord.id}');" class="${ordBgClass} hover:bg-blue-50/60 cursor-pointer transition ${idx === 0 && ordIdx > 0 ? 'border-t-2 border-slate-200/80' : ''}">
-                    ${idx === 0 ? `
-                      <td class="py-3.5 px-4 font-mono text-xs text-slate-700 align-top border-r border-slate-100" rowspan="${itemRows.length}">
-                        <div class="font-extrabold text-slate-900">${(ord.date || '-').slice(0, 16)}</div>
-                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">${ord.id}</div>
+                  return `
+                    <tr onclick="openOrderDrawer('${ord.id}')" class="hover:bg-slate-50 cursor-pointer transition">
+                      <td class="py-2.5 px-3.5 font-bold text-slate-800 font-mono align-top whitespace-nowrap">
+                        ${(ord.date || "-").slice(0, 16)}
                       </td>
-                    ` : ''}
-                    <td class="py-3 px-4 font-extrabold text-slate-800 text-xs">${it.name}</td>
-                    <td class="py-3 px-4 text-right font-mono font-extrabold text-slate-900 text-xs">${it.qty}개</td>
-                    <td class="py-3 px-4 text-right font-mono font-bold text-blue-700 text-xs">${isVendorDest ? '<span class="text-slate-400 font-normal">벤더정산</span>' : `@${Number(it.price || 0).toLocaleString()}원`}</td>
-                    <td class="py-3 px-4 text-right font-mono font-semibold text-slate-700 text-xs">${isVendorDest ? '-' : `${(Number(it.price || 0) * Number(it.qty || 1)).toLocaleString()}원`}</td>
-                    ${idx === 0 ? `
-                      <td class="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900 align-top border-l border-slate-100" rowspan="${itemRows.length}">
-                        <div class="text-sm">${isVendorDest ? '🔒 벤더정산' : `${Number(ord.totalPrice || 0).toLocaleString()}원`}</div>
-                        ${ord.shippingFee > 0 ? `<div class="text-[11px] text-slate-400 font-normal mt-0.5">배송비 +${ord.shippingFee.toLocaleString()}원</div>` : '<div class="text-[10px] text-slate-400 font-normal mt-0.5">무료배송</div>'}
-                      </td>
-                      <td class="py-3.5 px-4 text-center align-top border-l border-slate-100" rowspan="${itemRows.length}">
-                        <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                          <span class="px-2 py-0.5 rounded text-[11px] font-bold ${ord.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">${ord.paymentStatus === 'paid' ? '입금완료' : '미입금'}</span>
-                          <span class="px-2 py-0.5 rounded text-[11px] font-bold ${ord.status === '발송완료' ? 'bg-blue-50 text-blue-700 border border-blue-200' : (ord.status === '발송보류' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200')}">${ord.status}</span>
+                      <td class="py-2.5 px-3.5 font-semibold text-slate-800 align-top">
+                        <div class="space-y-1">
+                          ${itemRows.map(it => `<div class="truncate">${it.name}</div>`).join("")}
                         </div>
-                        ${ord.trackingNo ? `<div class="text-[11px] font-mono font-semibold text-slate-600 mt-1.5 bg-slate-100/80 px-2 py-0.5 rounded border border-slate-200/60 truncate max-w-[140px] mx-auto" title="${ord.trackingNo}">📦 ${ord.trackingNo}</div>` : ''}
                       </td>
-                    ` : ''}
-                  </tr>
-                `).join('');
-              }).join('')}
-            </tbody>
-          </table>
+                      <td class="py-2.5 px-3.5 text-right font-mono font-bold text-slate-900 align-top whitespace-nowrap">
+                        <div class="space-y-1">
+                          ${itemRows.map(it => `<div>${it.qty}개</div>`).join("")}
+                        </div>
+                      </td>
+                      <td class="py-2.5 px-3.5 text-right font-mono text-slate-600 align-top whitespace-nowrap">
+                        <div class="space-y-1">
+                          ${itemRows.map(it => `<div>${isVendorDest ? "<span class=\"text-slate-400 font-normal\">벤더정산</span>" : `${Number(it.price || 0).toLocaleString()}원`}</div>`).join("")}
+                        </div>
+                      </td>
+                      <td class="py-2.5 px-3.5 text-right font-mono font-bold text-slate-800 align-top whitespace-nowrap">
+                        <div class="space-y-1">
+                          ${itemRows.map(it => `<div>${isVendorDest ? "-" : `${(Number(it.price || 0) * Number(it.qty || 1)).toLocaleString()}원`}</div>`).join("")}
+                        </div>
+                      </td>
+                      <td class="py-2.5 px-3.5 text-right font-mono font-extrabold text-slate-900 align-top whitespace-nowrap">
+                        ${isVendorDest ? "<span class=\"text-slate-500 font-bold\">🔒 벤더정산</span>" : `${Number(ord.totalPrice || 0).toLocaleString()}원`}
+                      </td>
+                      <td class="py-2.5 px-3.5 text-slate-600 align-top text-xs">
+                        <div class="break-words ${memoText === "-" ? "text-slate-300" : ""}">${memoText}</div>
+                      </td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
         </div>
       `;
     }
@@ -4455,9 +4466,8 @@
               </div>
             </div>
             ${isExpanded ? `
-              <div class="p-3 bg-slate-50 border-t border-slate-200 space-y-2">
-                <div class="text-[11px] font-bold text-slate-600 px-1">📋 과거 거래 내역 및 품목별 단가 (클릭시 주문상세 이동)</div>
-                <div class="overflow-x-auto">${buildClientHistoryTableHtml(e)}</div>
+              <div class="p-3 bg-slate-50/80 border-t border-slate-200">
+                ${buildClientHistoryTableHtml(e)}
               </div>
             ` : ''}
           </div>
@@ -4477,32 +4487,33 @@
           const firstDays = firstProdId ? calcDaysAgo(e.productLastDateMap[firstProdId]) : 30;
 
           return `
-            <tr onclick="toggleClientAccordion('${encodeURIComponent(e.name)}')" class="hover:bg-slate-50/90 cursor-pointer transition ${isExpanded ? 'bg-slate-50/70' : 'bg-white'}">
-              <td class="py-3.5 px-4 align-middle whitespace-nowrap">
+            <tr onclick="toggleClientAccordion('${encodeURIComponent(e.name)}')" class="hover:bg-slate-50/90 cursor-pointer transition ${isExpanded ? "bg-slate-50/70" : "bg-white"}">
+              <td class="py-3.5 px-4 align-top whitespace-nowrap">
                 <span class="text-[11px] ${e.badgeClass} px-2.5 py-1 rounded-md font-bold inline-block">${e.type}</span>
               </td>
-              <td class="py-3.5 px-4 align-middle">
-                <div class="flex items-center gap-1.5">
+              <td class="py-3.5 px-4 align-top">
+                <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="font-extrabold text-sm text-slate-900">${e.name}</span>
-                  ${e.isTaxExempt ? '<span class="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-bold">면세</span>' : ''}
+                  ${e.isTaxExempt ? `<span class="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-bold">면세</span>` : ""}
                 </div>
-                ${e.bizNum && !e.bizNum.startsWith('🔒') ? `<div class="text-[10px] text-slate-400 font-mono mt-0.5">${e.bizNum}</div>` : ''}
+                ${e.bizNum && !e.bizNum.startsWith("🔒") ? `<div class="text-[10px] text-slate-400 font-mono mt-0.5">${e.bizNum}</div>` : ""}
               </td>
-              <td class="py-3.5 px-4 align-middle max-w-[300px]">
-                <div class="font-mono text-xs font-semibold text-slate-800">${e.phone || '-'}</div>
-                <div class="text-[11px] text-slate-500 truncate mt-0.5" title="${e.address || ''}">${e.address || '주소 미등록'}</div>
+              <td class="py-3.5 px-4 align-top max-w-[340px]">
+                <div class="font-mono text-xs font-semibold text-slate-800">${e.phone || "-"}</div>
+                <div class="text-[11px] text-slate-500 truncate mt-0.5" title="${e.address || ""}">${e.address || "주소 미등록"}</div>
+                ${e.memo ? `<div class="text-[11px] text-slate-600 bg-slate-100 border border-slate-200/90 px-2 py-0.5 rounded-md mt-1 truncate max-w-[320px]" title="${e.memo}">📝 ${e.memo}</div>` : ""}
               </td>
-              <td class="py-3.5 px-4 align-middle">
+              <td class="py-3.5 px-4 align-top">
                 <div class="flex flex-wrap gap-1.5 leading-relaxed">${prodBadges}</div>
               </td>
-              <td class="py-3.5 px-4 align-middle text-center whitespace-nowrap">
+              <td class="py-3.5 px-4 align-top text-center whitespace-nowrap">
                 <span class="font-extrabold text-slate-900 text-xs">${e.orderCount}건</span>
-                ${e.lastOrderDate ? `<div class="text-[10px] text-slate-400 font-mono mt-0.5">${e.lastOrderDate.slice(0, 10)}</div>` : ''}
+                ${e.lastOrderDate ? `<div class="text-[10px] text-slate-400 font-mono mt-0.5">${e.lastOrderDate.slice(0, 10)}</div>` : ""}
               </td>
-              <td class="py-3.5 px-4 align-middle text-right whitespace-nowrap" onclick="event.stopPropagation()">
+              <td class="py-3.5 px-4 align-top text-right whitespace-nowrap" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button type="button" onclick="toggleClientAccordion('${encodeURIComponent(e.name)}')" class="toss-btn text-[11px] ${isExpanded ? 'bg-slate-800 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} font-bold px-2.5 py-1.5 rounded-lg">
-                    ${isExpanded ? '▲ 이력접기' : '▼ 이력/단가'}
+                  <button type="button" onclick="toggleClientAccordion('${encodeURIComponent(e.name)}')" class="toss-btn text-[11px] ${isExpanded ? "bg-slate-800 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"} font-bold px-2.5 py-1.5 rounded-lg">
+                    ${isExpanded ? "▲ 이력접기" : "▼ 이력/단가"}
                   </button>
                   <button type="button" onclick="openClientEditModal('${encodeURIComponent(e.name)}')" class="toss-btn text-[11px] bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-semibold px-2.5 py-1.5 rounded-lg" title="거래처 사업자번호/이메일/기본정보 수정">
                     정보수정 ✏️
@@ -4510,38 +4521,13 @@
                 </div>
               </td>
             </tr>
-            ${e.memo ? `
-              <tr onclick="toggleClientAccordion('${encodeURIComponent(e.name)}')" class="bg-slate-50/50 cursor-pointer">
-                <td class="py-1.5 px-4"></td>
-                <td colspan="5" class="py-1.5 px-4 text-[11px] text-slate-600">
-                  <div class="flex items-center gap-2 bg-slate-100/80 border border-slate-200/70 px-3 py-1 rounded-lg">
-                    <span class="font-bold text-slate-700 shrink-0">📝 거래처 특이사항:</span>
-                    <span class="text-slate-700 truncate">${e.memo}</span>
-                  </div>
-                </td>
-              </tr>
-            ` : ''}
             ${isExpanded ? `
-              <tr class="bg-blue-50/20 border-b-2 border-slate-300">
-                <td colspan="6" class="p-4 md:p-6 bg-slate-50/95">
-                  <div class="w-full space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200/90 shadow-2xs">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#3182f6]"></span>
-                        <span class="text-sm font-extrabold text-slate-900">📋 [${e.name}] 전체 주문 이력 & 당시 거래 단가</span>
-                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full font-mono">총 ${e.orderCount}건</span>
-                        <span class="text-xs text-slate-400">| 클릭 시 해당 주문 상세 서랍이 열립니다</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        ${firstMp ? `<button type="button" onclick="copyReorderKakaoMsg('${encodeURIComponent(e.name)}', '${encodeURIComponent(firstMp.name)}', ${firstDays || 30})" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold px-3 py-1.5 rounded-lg">💬 맞춤 재주문 카톡 복사</button>` : ''}
-                        <button type="button" onclick="openClientEditModal('${encodeURIComponent(e.name)}')" class="toss-btn text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg">✏️ 거래처 정보 수정</button>
-                      </div>
-                    </div>
-                    ${buildClientHistoryTableHtml(e)}
-                  </div>
+              <tr class="bg-slate-50/60 border-b-2 border-slate-300">
+                <td colspan="6" class="p-3 md:p-4 bg-slate-50/80">
+                  ${buildClientHistoryTableHtml(e)}
                 </td>
               </tr>
-            ` : ''}
+            ` : ""}
           `;
         }).join('');
       }
