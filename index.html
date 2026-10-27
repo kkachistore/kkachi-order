@@ -2638,7 +2638,7 @@
 
       let lines = [];
       lines.push(`[까치방앗간 주문확인]`);
-      lines.push(`${clientName} 사장님, 주문이 정상 접수되었습니다.\n`);
+      lines.push(`주문이 정상 접수되었습니다.\n`);
       
       lines.push(`[주문 내역]`);
       if (items.length === 0) {
@@ -3889,7 +3889,7 @@
 
       let msg = "";
       if (tab === 'order') {
-        msg = `[까치방앗간 주문확인]\n${order.clientName} 사장님, 주문이 정상 접수되었습니다.\n\n` +
+        msg = `[까치방앗간 주문확인]\n주문이 정상 접수되었습니다.\n\n` +
               `[주문 내역]\n` +
               (order.items && order.items.length > 0 ? 
                 order.items.map(i => `• ${i.name} × ${i.qty}개 (${(i.price * i.qty).toLocaleString()}원)`).join('\n') : `• ${order.itemsSummary}\n`) +
@@ -3900,12 +3900,12 @@
               (order.memo ? `• 요청사항: ${order.memo}\n` : '') +
               `\n정성껏 준비해서 빠르게 발송해 드리겠습니다.`;
       } else if (tab === 'shipping') {
-        msg = `[까치방앗간 발송안내]\n${order.clientName} 사장님, 주문하신 상품이 오늘 출고되었습니다.\n\n` +
+        msg = `[까치방앗간 발송안내]\n주문하신 상품이 오늘 출고되었습니다.\n\n` +
               `• 택배사: ${order.courier || 'CJ대한통운'}\n` +
               `• 송장번호: ${order.trackingNo || '등록중'}\n` +
               `• 배송지: ${order.receiverAddress}\n\n항상 믿고 찾아주셔서 감사합니다.`;
       } else if (tab === 'unpaid') {
-        msg = `[까치방앗간 입금안내]\n${order.clientName} 사장님, 접수된 주문의 입금 확인 부탁드립니다.\n\n` +
+        msg = `[까치방앗간 입금안내]\n접수된 주문의 입금 확인 부탁드립니다.\n\n` +
               `• 품목: ${order.itemsSummary}\n` +
               `• 입금액: ${order.totalPrice.toLocaleString()}원\n\n` +
               `[입금 계좌]\n${SUPPLIER_INFO.bankBiz}`;
@@ -4281,50 +4281,53 @@
       const isVendorDest = entity && entity.rawType === '벤더 납품처';
 
       if (clientOrders.length === 0) {
-        return '<div class="p-5 text-center text-xs text-slate-400 bg-white rounded-xl border border-slate-200/80">아직 등록된 주문 내역이 없습니다.</div>';
+        return '<div class="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200/90 shadow-xs">아직 등록된 주문 내역이 없습니다.</div>';
       }
 
       return `
-        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100/80 border-b border-slate-200 text-slate-500 font-bold text-[11px]">
+        <div class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-bold text-xs">
               <tr>
-                <th class="py-2.5 px-3 w-36">주문일시 / 번호</th>
-                <th class="py-2.5 px-3">주문 품목명</th>
-                <th class="py-2.5 px-3 w-20 text-right">수량</th>
-                <th class="py-2.5 px-3 w-28 text-right">당시 거래단가</th>
-                <th class="py-2.5 px-3 w-28 text-right">품목 소계</th>
-                <th class="py-2.5 px-3 w-32 text-right">주문 총액</th>
-                <th class="py-2.5 px-3 w-36 text-center">입금 · 출고상태</th>
+                <th class="py-3 px-4 w-40 text-slate-700">주문일시 / 번호</th>
+                <th class="py-3 px-4 text-slate-700">주문 품목명</th>
+                <th class="py-3 px-4 w-24 text-right text-slate-700">수량</th>
+                <th class="py-3 px-4 w-32 text-right text-slate-700">당시 거래단가</th>
+                <th class="py-3 px-4 w-32 text-right text-slate-700">품목 소계</th>
+                <th class="py-3 px-4 w-36 text-right text-slate-700">주문 총액</th>
+                <th class="py-3 px-4 w-44 text-center text-slate-700">입금 · 출고 · 송장</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              ${clientOrders.map(ord => {
+              ${clientOrders.map((ord, ordIdx) => {
                 const items = ensureOrderItemsArray(ord);
                 const itemRows = (items && items.length > 0) ? items : [{ name: ord.itemsSummary || '-', qty: ord.totalQty || 1, price: ord.totalPrice || 0 }];
+                const isEvenOrd = ordIdx % 2 === 0;
+                const ordBgClass = isEvenOrd ? 'bg-white' : 'bg-slate-50/40';
+
                 return itemRows.map((it, idx) => `
-                  <tr onclick="switchTab('order-list'); openOrderDrawer('${ord.id}');" class="hover:bg-blue-50/40 cursor-pointer transition">
+                  <tr onclick="switchTab('order-list'); openOrderDrawer('${ord.id}');" class="${ordBgClass} hover:bg-blue-50/60 cursor-pointer transition ${idx === 0 && ordIdx > 0 ? 'border-t-2 border-slate-200/80' : ''}">
                     ${idx === 0 ? `
-                      <td class="py-2.5 px-3 font-mono text-[11px] text-slate-600 align-top border-r border-slate-100" rowspan="${itemRows.length}">
-                        <div class="font-bold text-slate-800">${(ord.date || '-').slice(0, 16)}</div>
-                        <div class="text-[10px] text-slate-400">${ord.id}</div>
+                      <td class="py-3.5 px-4 font-mono text-xs text-slate-700 align-top border-r border-slate-100" rowspan="${itemRows.length}">
+                        <div class="font-extrabold text-slate-900">${(ord.date || '-').slice(0, 16)}</div>
+                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">${ord.id}</div>
                       </td>
                     ` : ''}
-                    <td class="py-2 px-3 font-bold text-slate-800">${it.name}</td>
-                    <td class="py-2 px-3 text-right font-mono font-extrabold text-slate-900">${it.qty}개</td>
-                    <td class="py-2 px-3 text-right font-mono font-bold text-blue-700">${isVendorDest ? '벤더정산' : `@${Number(it.price || 0).toLocaleString()}원`}</td>
-                    <td class="py-2 px-3 text-right font-mono text-slate-600">${isVendorDest ? '-' : `${(Number(it.price || 0) * Number(it.qty || 1)).toLocaleString()}원`}</td>
+                    <td class="py-3 px-4 font-extrabold text-slate-800 text-xs">${it.name}</td>
+                    <td class="py-3 px-4 text-right font-mono font-extrabold text-slate-900 text-xs">${it.qty}개</td>
+                    <td class="py-3 px-4 text-right font-mono font-bold text-blue-700 text-xs">${isVendorDest ? '<span class="text-slate-400 font-normal">벤더정산</span>' : `@${Number(it.price || 0).toLocaleString()}원`}</td>
+                    <td class="py-3 px-4 text-right font-mono font-semibold text-slate-700 text-xs">${isVendorDest ? '-' : `${(Number(it.price || 0) * Number(it.qty || 1)).toLocaleString()}원`}</td>
                     ${idx === 0 ? `
-                      <td class="py-2.5 px-3 text-right font-mono font-extrabold text-slate-900 align-top border-l border-slate-100" rowspan="${itemRows.length}">
-                        <div>${isVendorDest ? '🔒 벤더정산' : `${Number(ord.totalPrice || 0).toLocaleString()}원`}</div>
-                        ${ord.shippingFee > 0 ? `<div class="text-[10px] text-slate-400 font-normal">배송비 +${ord.shippingFee.toLocaleString()}</div>` : ''}
+                      <td class="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900 align-top border-l border-slate-100" rowspan="${itemRows.length}">
+                        <div class="text-sm">${isVendorDest ? '🔒 벤더정산' : `${Number(ord.totalPrice || 0).toLocaleString()}원`}</div>
+                        ${ord.shippingFee > 0 ? `<div class="text-[11px] text-slate-400 font-normal mt-0.5">배송비 +${ord.shippingFee.toLocaleString()}원</div>` : '<div class="text-[10px] text-slate-400 font-normal mt-0.5">무료배송</div>'}
                       </td>
-                      <td class="py-2.5 px-3 text-center align-top border-l border-slate-100" rowspan="${itemRows.length}">
-                        <div class="inline-flex items-center gap-1">
-                          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${ord.paymentStatus === 'paid' ? 'bg-slate-100 text-slate-700' : 'bg-rose-50 text-rose-600'}">${ord.paymentStatus === 'paid' ? '입금완료' : '미입금'}</span>
-                          <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">${ord.status}</span>
+                      <td class="py-3.5 px-4 text-center align-top border-l border-slate-100" rowspan="${itemRows.length}">
+                        <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                          <span class="px-2 py-0.5 rounded text-[11px] font-bold ${ord.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">${ord.paymentStatus === 'paid' ? '입금완료' : '미입금'}</span>
+                          <span class="px-2 py-0.5 rounded text-[11px] font-bold ${ord.status === '발송완료' ? 'bg-blue-50 text-blue-700 border border-blue-200' : (ord.status === '발송보류' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200')}">${ord.status}</span>
                         </div>
-                        ${ord.trackingNo ? `<div class="text-[10px] font-mono text-slate-400 mt-1 truncate max-w-[120px] mx-auto">${ord.trackingNo}</div>` : ''}
+                        ${ord.trackingNo ? `<div class="text-[11px] font-mono font-semibold text-slate-600 mt-1.5 bg-slate-100/80 px-2 py-0.5 rounded border border-slate-200/60 truncate max-w-[140px] mx-auto" title="${ord.trackingNo}">📦 ${ord.trackingNo}</div>` : ''}
                       </td>
                     ` : ''}
                   </tr>
@@ -4522,14 +4525,19 @@
               </tr>
             ` : ''}
             ${isExpanded ? `
-              <tr class="bg-slate-50/90 border-b border-slate-200">
-                <td colspan="6" class="p-4">
-                  <div class="max-w-5xl ml-auto mr-auto space-y-2">
-                    <div class="flex items-center justify-between px-1">
-                      <span class="text-xs font-extrabold text-slate-800">📋 [${e.name}] 전체 주문 이력 및 당시 거래 단가 (총 ${e.orderCount}건)</span>
+              <tr class="bg-blue-50/20 border-b-2 border-slate-300">
+                <td colspan="6" class="p-4 md:p-6 bg-slate-50/95">
+                  <div class="w-full space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200/90 shadow-2xs">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#3182f6]"></span>
+                        <span class="text-sm font-extrabold text-slate-900">📋 [${e.name}] 전체 주문 이력 & 당시 거래 단가</span>
+                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full font-mono">총 ${e.orderCount}건</span>
+                        <span class="text-xs text-slate-400">| 클릭 시 해당 주문 상세 서랍이 열립니다</span>
+                      </div>
                       <div class="flex items-center gap-2">
-                        ${firstMp ? `<button type="button" onclick="copyReorderKakaoMsg('${encodeURIComponent(e.name)}', '${encodeURIComponent(firstMp.name)}', ${firstDays || 30})" class="text-[11px] bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 font-bold px-2.5 py-1 rounded-lg">💬 맞춤 재주문 카톡 복사</button>` : ''}
-                        <span class="text-[11px] text-slate-400">행을 클릭하면 해당 주문 상세 서랍이 열립니다</span>
+                        ${firstMp ? `<button type="button" onclick="copyReorderKakaoMsg('${encodeURIComponent(e.name)}', '${encodeURIComponent(firstMp.name)}', ${firstDays || 30})" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold px-3 py-1.5 rounded-lg">💬 맞춤 재주문 카톡 복사</button>` : ''}
+                        <button type="button" onclick="openClientEditModal('${encodeURIComponent(e.name)}')" class="toss-btn text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg">✏️ 거래처 정보 수정</button>
                       </div>
                     </div>
                     ${buildClientHistoryTableHtml(e)}
