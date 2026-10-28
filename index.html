@@ -356,11 +356,20 @@
           </div>
         </div>
 
-        <div class="pt-2.5 border-t border-slate-100 flex justify-between items-center text-xs">
-          <label class="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
-            <input type="checkbox" id="chk-all-orders" onchange="toggleSelectAllOrders(this.checked)" class="w-4 h-4 rounded text-[#3182f6]">
-            <span>확정 주문 전체 선택 <span class="text-[10px] text-slate-400 font-normal">(발송보류 자동제외)</span></span>
-          </label>
+        <div class="pt-2.5 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 text-xs">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="selectUnshippedOrders()" id="btn-select-unshipped" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white font-extrabold px-3.5 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5" title="아직 송장이 없는 오늘 출고 대상 주문만 원클릭으로 선택합니다">
+              <span>📦 오늘 미출고건만 전체 선택</span>
+              <span id="badge-unshipped-count" class="bg-white/25 text-white text-[11px] px-1.5 py-0.2 rounded-full font-mono">0건</span>
+            </button>
+            <label class="flex items-center gap-1 text-slate-500 hover:text-slate-800 cursor-pointer font-medium text-xs ml-1">
+              <input type="checkbox" id="chk-all-orders" onchange="toggleSelectAllOrders(this.checked)" class="w-3.5 h-3.5 rounded text-slate-600">
+              <span>화면 전체</span>
+            </label>
+            <button type="button" onclick="clearAllSelections()" class="toss-btn text-slate-400 hover:text-slate-700 text-xs px-1.5 py-1">
+              선택해제
+            </button>
+          </div>
 
           <label class="toss-btn bg-[#191f28] text-white px-3 py-1.5 rounded-lg font-bold cursor-pointer text-center flex items-center gap-1 shadow-xs text-xs">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
@@ -3296,6 +3305,22 @@
       updateFloatingBarUI();
     }
 
+    function selectUnshippedOrders() {
+      const unshipped = orders.filter(o => 
+        o.status !== '주문취소' && 
+        o.status !== '발송보류' && 
+        (!o.trackingNo || !o.trackingNo.trim())
+      );
+      if (unshipped.length === 0) {
+        return alert("현재 출고 대기 중인(송장 미등록) 미출고 주문이 없습니다.");
+      }
+      selectedOrderIds.clear();
+      unshipped.forEach(o => selectedOrderIds.add(o.id));
+      renderOrdersTable();
+      updateFloatingBarUI();
+      showCopyToast(`✓ 오늘 보낼 미출고 주문 ${unshipped.length}건이 모두 선택되었습니다!`);
+    }
+
     function toggleSelectAllOrders(checked) {
       let filtered = orders.filter(o => o.status !== '주문취소' && o.status !== '발송보류');
       if (listFilter === 'unpaid') filtered = filtered.filter(o => o.paymentStatus !== 'paid');
@@ -3370,6 +3395,16 @@
       if (countPaid) countPaid.textContent = validOrders.filter(o => o.paymentStatus === 'paid').length;
       if (countHold) countHold.textContent = validOrders.filter(o => o.status === '발송보류').length;
 
+      // 주문 분류 헬퍼
+      const isUnshipped = (o) => o.status !== '주문취소' && o.status !== '발송보류' && (!o.trackingNo || !o.trackingNo.trim());
+      const isShipped = (o) => o.status !== '주문취소' && (Boolean(o.trackingNo && o.trackingNo.trim()) || o.status === '발송완료');
+      const isHold = (o) => o.status === '발송보류';
+
+      // 전체 미출고(발송대상) 건수 뱃지 갱신
+      const totalUnshippedCount = orders.filter(isUnshipped).length;
+      const unshippedBadge = document.getElementById('badge-unshipped-count');
+      if (unshippedBadge) unshippedBadge.textContent = `${totalUnshippedCount}건`;
+
       let filtered = orders.filter(o => {
         if (listFilter === 'unpaid' && (o.paymentStatus === 'paid' || o.status === '주문취소')) return false;
         if (listFilter === 'paid' && (o.paymentStatus !== 'paid' || o.status === '주문취소')) return false;
@@ -3387,35 +3422,55 @@
         return true;
       });
 
-      const visibleOrders = search ? filtered : filtered.slice(0, ordersDisplayLimit);
+      // 미출고 주문(발송대상)을 최상단에, 그 다음 출고완료, 그 다음 보류/기타 순으로 모아 정렬
+      const unshippedList = filtered.filter(isUnshipped);
+      const shippedList = filtered.filter(isShipped);
+      const otherList = filtered.filter(o => !isUnshipped(o) && !isShipped(o));
 
-      // 모바일 카드 뷰 (클릭 시 텍스트 즉시 복사 + 정돈된 품목/수량 정렬)
-      const mobileContainer = document.getElementById('mobile-order-cards');
-      if (mobileContainer) {
-        if (visibleOrders.length === 0) {
-          mobileContainer.innerHTML = '<div class="toss-card p-6 text-center text-xs text-slate-400">주문 내역이 없습니다.</div>';
-        } else {
-          mobileContainer.innerHTML = visibleOrders.map(o => {
-            const pack = getOrderPackingInfo(o);
-            const isHold = o.status === '발송보류';
-            const recName = o.receiverName || o.clientName || '';
-            const recPhone = o.receiverPhone || '';
-            const recAddr = o.receiverAddress || '';
-            return `
-            <div onclick="openOrderDrawer('${o.id}')" class="toss-card p-4 space-y-3 active:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-45 line-through' : isHold ? 'border-slate-300 bg-slate-50/70' : 'bg-white'}">
+      const sortedFiltered = [...unshippedList, ...shippedList, ...otherList];
+      const visibleOrders = search ? sortedFiltered : sortedFiltered.slice(0, ordersDisplayLimit);
+
+      const visibleUnshipped = visibleOrders.filter(isUnshipped);
+      const visibleShipped = visibleOrders.filter(isShipped);
+      const visibleOther = visibleOrders.filter(o => !isUnshipped(o) && !isShipped(o));
+
+      // 모바일 카드 빌더
+      const buildMobileCard = (o) => {
+        const pack = getOrderPackingInfo(o);
+        const unshipped = isUnshipped(o);
+        const shipped = isShipped(o);
+        const hold = o.status === '발송보류';
+        const recName = o.receiverName || o.clientName || '';
+        const recPhone = o.receiverPhone || '';
+        const recAddr = o.receiverAddress || '';
+        const cardStyle = unshipped
+          ? 'bg-white border-blue-300 ring-1 ring-blue-100 border-l-4 border-l-[#3182f6] shadow-2xs'
+          : shipped
+            ? 'bg-slate-50/80 border-slate-200 text-slate-500'
+            : hold
+              ? 'border-slate-300 bg-slate-50/70'
+              : 'bg-white border-slate-200';
+
+        return `
+            <div onclick="openOrderDrawer('${o.id}')" class="toss-card p-4 space-y-3 active:bg-slate-50 cursor-pointer ${o.status === '주문취소' ? 'opacity-45 line-through' : cardStyle}">
               <div class="flex justify-between items-start gap-2 border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2 min-w-0">
-                  <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6] shrink-0">
+                  <div class="flex flex-col items-center shrink-0">
+                    <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6] ${unshipped ? 'border-blue-400' : 'border-slate-300'}">
+                    ${unshipped ? '<span class="text-[9px] bg-blue-50 text-[#3182f6] px-1 rounded font-black mt-1 border border-blue-200">대기</span>' : ''}
+                    ${shipped ? '<span class="text-[9px] text-slate-400 mt-1">완료</span>' : ''}
+                    ${hold ? '<span class="text-[9px] bg-amber-50 text-amber-700 px-1 rounded font-bold mt-1">보류</span>' : ''}
+                  </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      <span class="font-extrabold text-sm text-slate-900 truncate">${o.clientName}</span>
+                      <span class="font-extrabold text-sm ${unshipped ? 'text-slate-900' : 'text-slate-700'} truncate">${o.clientName}</span>
                       <button onclick="event.stopPropagation(); toggleTaxExemptInline('${o.id}')" class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${o.isTaxExempt ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-white text-slate-500 border-slate-200'}">${o.isTaxExempt ? '면세' : '과세'}</button>
                     </div>
                     <div class="text-[10px] text-slate-400 font-mono mt-0.5">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'} · ${o.id}</div>
                   </div>
                 </div>
                 <div class="text-right shrink-0">
-                  <div class="font-extrabold text-sm text-slate-900 font-mono">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</div>
+                  <div class="font-extrabold text-sm ${unshipped ? 'text-slate-900' : 'text-slate-700'} font-mono">${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</div>
                   <div class="flex gap-1 justify-end mt-1" onclick="event.stopPropagation()">
                     <button onclick="togglePaymentStatusInline('${o.id}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                       o.paymentStatus === 'paid' ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-rose-50/70 text-rose-600 border-rose-200'
@@ -3466,39 +3521,49 @@
                 }">${o.status === '발송보류' ? '⏸ 발송보류' : o.status}</button>
               </div>
             </div>
-          `}).join('');
-        }
-      }
+        `;
+      };
 
-      // PC 와이드 테이블 (복사 버튼 없이 항목 텍스트 클릭 시 즉시 복사 + 품목/수량 정갈한 줄 맞춤)
-      const tbody = document.getElementById('orders-table-body');
-      if (tbody) {
-        tbody.innerHTML = visibleOrders.length === 0 ? 
-          '<tr><td colspan="11" class="p-10 text-center text-slate-400">주문 내역이 없습니다.</td></tr>' :
-          visibleOrders.map(o => {
-            const pack = getOrderPackingInfo(o);
-            const isHold = o.status === '발송보류';
-            const recName = o.receiverName || o.clientName || '';
-            const recPhone = o.receiverPhone || '';
-            const recAddr = o.receiverAddress || '';
-            const items = ensureOrderItemsArray(o);
-            return `
-            <tr class="hover:bg-slate-50/70 cursor-pointer transition ${o.status === '주문취소' ? 'opacity-45 line-through' : isHold ? 'bg-slate-50/60' : 'bg-white'}">
-              <td class="py-4 px-3 text-center align-top" onclick="event.stopPropagation()">
-                <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onchange="toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6] mt-0.5">
+      // PC 테이블 행 빌더
+      const buildTableRow = (o) => {
+        const pack = getOrderPackingInfo(o);
+        const unshipped = isUnshipped(o);
+        const shipped = isShipped(o);
+        const hold = o.status === '발송보류';
+        const recName = o.receiverName || o.clientName || '';
+        const recPhone = o.receiverPhone || '';
+        const recAddr = o.receiverAddress || '';
+        const items = ensureOrderItemsArray(o);
+        const rowStyle = unshipped
+          ? 'bg-white hover:bg-blue-50/40 border-l-4 border-l-[#3182f6] shadow-2xs'
+          : shipped
+            ? 'bg-slate-50/70 hover:bg-slate-100/70 text-slate-500'
+            : hold
+              ? 'bg-amber-50/30 hover:bg-amber-50/60'
+              : 'bg-white';
+
+        return `
+            <tr class="cursor-pointer transition ${o.status === '주문취소' ? 'opacity-45 line-through' : rowStyle}">
+              <td class="py-3.5 px-3 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
+                <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onchange="toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6] ${unshipped ? 'border-blue-400 ring-1 ring-blue-300' : 'border-slate-300'} mt-0.5 cursor-pointer">
+                <div class="mt-1">
+                  ${unshipped ? '<span class="inline-block text-[10px] bg-blue-50 text-[#3182f6] px-1.5 py-0.5 rounded font-black border border-blue-200">출고대기</span>' : ''}
+                  ${shipped ? '<span class="inline-block text-[10px] text-slate-400">출고완료</span>' : ''}
+                  ${hold ? '<span class="inline-block text-[10px] bg-amber-50 text-amber-700 px-1 py-0.5 rounded font-bold">발송보류</span>' : ''}
+                </div>
               </td>
-              <td class="py-4 px-3 font-mono text-[11px] text-slate-500 align-top whitespace-nowrap" onclick="openOrderDrawer('${o.id}')">
-                <div class="font-semibold text-slate-700">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</div>
+              <td class="py-3.5 px-3 font-mono text-[11px] text-slate-500 align-top whitespace-nowrap" onclick="openOrderDrawer('${o.id}')">
+                <div class="font-semibold ${unshipped ? 'text-slate-800' : 'text-slate-600'}">${o.date ? o.date.slice(5, 16).replace('T', ' ') : '-'}</div>
                 <div class="text-[10px] text-slate-400 mt-0.5">${o.id}</div>
               </td>
-              <td class="py-4 px-3 align-top" onclick="openOrderDrawer('${o.id}')">
-                <div class="font-extrabold text-slate-900 text-xs leading-snug break-keep">${o.clientName}</div>
+              <td class="py-3.5 px-3 align-top" onclick="openOrderDrawer('${o.id}')">
+                <div class="font-extrabold ${unshipped ? 'text-slate-900' : 'text-slate-700'} text-xs leading-snug break-keep">${o.clientName}</div>
                 ${o.clientType === '벤더' ? '<span class="inline-block text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded mt-1 font-semibold">벤더발주</span>' : ''}
               </td>
-              <td class="py-4 px-3 align-top max-w-[320px]" onclick="event.stopPropagation()">
+              <td class="py-3.5 px-3 align-top max-w-[320px]" onclick="event.stopPropagation()">
                 <div class="space-y-1">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span onclick="copySingleFieldInline('${encodeURIComponent(recName)}', '받는분 성함', true)" title="클릭하면 받는분 이름이 복사됩니다" class="font-bold text-slate-900 hover:text-blue-600 hover:bg-blue-50/80 px-1.5 py-0.5 -ml-1.5 rounded transition cursor-pointer">${recName}</span>
+                    <span onclick="copySingleFieldInline('${encodeURIComponent(recName)}', '받는분 성함', true)" title="클릭하면 받는분 이름이 복사됩니다" class="font-bold ${unshipped ? 'text-slate-900' : 'text-slate-700'} hover:text-blue-600 hover:bg-blue-50/80 px-1.5 py-0.5 -ml-1.5 rounded transition cursor-pointer">${recName}</span>
                     ${recPhone ? `<span onclick="copySingleFieldInline('${encodeURIComponent(recPhone)}', '전화번호', true)" title="클릭하면 전화번호가 복사됩니다" class="text-[11px] text-slate-600 hover:text-blue-600 hover:bg-blue-50/80 px-1.5 py-0.5 rounded font-mono transition cursor-pointer">${recPhone}</span>` : ''}
                   </div>
                   ${recAddr ? `
@@ -3508,14 +3573,14 @@
                   ${o.memo ? `<div class="text-[10px] text-slate-400 pt-0.5">🚚 ${o.memo}</div>` : ''}
                 </div>
               </td>
-              <td class="py-4 px-3 align-top min-w-[260px]" onclick="openOrderDrawer('${o.id}')">
+              <td class="py-3.5 px-3 align-top min-w-[260px]" onclick="openOrderDrawer('${o.id}')">
                 <div class="space-y-1">
                   ${items && items.length > 0 ? items.map(it => `
                     <div class="flex items-center justify-between gap-3 text-xs border-b border-slate-100/80 last:border-0 pb-1 last:pb-0">
-                      <span class="font-bold text-slate-800">${it.name}</span>
+                      <span class="font-bold ${unshipped ? 'text-slate-800' : 'text-slate-600'}">${it.name}</span>
                       <div class="flex items-center gap-2 shrink-0 font-mono text-[11px]">
                         <span class="text-slate-400">@${Number(it.price || 0).toLocaleString()}</span>
-                        <span class="font-extrabold text-slate-900 w-10 text-right">${it.qty}개</span>
+                        <span class="font-extrabold ${unshipped ? 'text-slate-900' : 'text-slate-700'} w-10 text-right">${it.qty}개</span>
                       </div>
                     </div>
                   `).join('') : `<div class="font-bold text-slate-900">${o.itemsSummary}</div>`}
@@ -3525,41 +3590,104 @@
                   ${o.internalMemo ? `<span onclick="event.stopPropagation(); editInternalMemoInline('${o.id}')" class="bg-amber-50/80 text-amber-900 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-semibold" title="클릭하여 사내메모 수정">📌 ${o.internalMemo}</span>` : `<button onclick="event.stopPropagation(); editInternalMemoInline('${o.id}')" class="text-[10px] text-slate-400 hover:text-slate-700 font-medium">+사내메모</button>`}
                 </div>
               </td>
-              <td class="py-4 px-3 text-right font-extrabold text-slate-900 font-mono align-top whitespace-nowrap" onclick="openOrderDrawer('${o.id}')">
+              <td class="py-3.5 px-3 text-right font-extrabold ${unshipped ? 'text-slate-900' : 'text-slate-700'} font-mono align-top whitespace-nowrap" onclick="openOrderDrawer('${o.id}')">
                 <div>${o.totalPrice ? o.totalPrice.toLocaleString() : 0}원</div>
                 ${o.shippingFee > 0 ? `<div class="text-[10px] text-slate-400 font-normal mt-0.5">(택배비 ${o.shippingFee.toLocaleString()})</div>` : ''}
               </td>
-              <td class="py-4 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
+              <td class="py-3.5 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
                 <button onclick="toggleTaxExemptInline('${o.id}')" title="클릭하여 과세/면세 전환" class="px-2 py-1 rounded-md text-[10px] font-bold border ${o.isTaxExempt ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${o.isTaxExempt ? '면세' : '과세'}</button>
               </td>
-              <td class="py-4 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
+              <td class="py-3.5 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
                 <button onclick="togglePaymentStatusInline('${o.id}')" class="px-2.5 py-1 rounded-md text-[10px] font-bold border ${
                   o.paymentStatus === 'paid' ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' : 'bg-rose-50/70 text-rose-600 border-rose-200 hover:bg-rose-100/70'
                 }">
                   ${o.paymentStatus === 'paid' ? '입금완료' : '미입금'}
                 </button>
               </td>
-              <td class="py-4 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
-                <button onclick="toggleTaxInvoiceInline('${o.id}')" class="px-2 py-1 rounded-md text-[10px] font-semibold border ${
+              <td class="py-3.5 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
+                <button onclick="toggleTaxInvoiceInline('${o.id}')" class="px-2.5 py-1 rounded-md text-[10px] font-semibold border ${
                   o.taxInvoiceStatus === 'issued' ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'
                 }">
                   ${o.taxInvoiceStatus === 'issued' ? '발행완료' : '미발행'}
                 </button>
               </td>
-              <td class="py-4 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
+              <td class="py-3.5 px-2.5 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
                 <button onclick="toggleOrderHoldInline('${o.id}')" title="클릭하여 접수완료 ↔ 발송보류 전환" class="px-2.5 py-1 rounded-md text-[10px] font-semibold border ${
                   o.status === '발송보류' ? 'bg-slate-800 text-white border-slate-800' :
                   o.status === '접수완료' ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' :
                   o.status === '발송완료' ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-slate-100 text-slate-600 border-slate-200'
                 }">${o.status === '발송보류' ? '⏸ 발송보류' : o.status}</button>
               </td>
-              <td class="py-4 px-3 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
+              <td class="py-3.5 px-3 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
                 <button onclick="editTrackingInline('${o.id}')" class="hover:text-slate-900 text-xs">
                   ${formatTrackingDisplay(o.trackingNo)}
                 </button>
               </td>
             </tr>
-          `}).join('');
+        `;
+      };
+
+      // 모바일 카드 뷰 렌더링
+      const mobileContainer = document.getElementById('mobile-order-cards');
+      if (mobileContainer) {
+        if (visibleOrders.length === 0) {
+          mobileContainer.innerHTML = '<div class="toss-card p-6 text-center text-xs text-slate-400">주문 내역이 없습니다.</div>';
+        } else {
+          let html = '';
+          if (visibleUnshipped.length > 0) {
+            html += visibleUnshipped.map(buildMobileCard).join('');
+          }
+          if (visibleUnshipped.length > 0 && visibleShipped.length > 0) {
+            html += `
+              <div class="p-2.5 my-3 bg-blue-50 border border-blue-200 rounded-2xl text-center shadow-2xs">
+                <div class="text-xs font-black text-blue-900 flex items-center justify-center gap-1.5">
+                  <span>▲ 위쪽: 오늘 발송 대상 (미출고 ${visibleUnshipped.length}건)</span>
+                </div>
+                <div class="text-[10px] text-slate-500 font-medium mt-0.5">▼ 아래쪽: 송장 등록된 출고 완료 주문 (${visibleShipped.length}건)</div>
+              </div>
+            `;
+          }
+          if (visibleShipped.length > 0) {
+            html += visibleShipped.map(buildMobileCard).join('');
+          }
+          if (visibleOther.length > 0) {
+            html += visibleOther.map(buildMobileCard).join('');
+          }
+          mobileContainer.innerHTML = html;
+        }
+      }
+
+      // PC 와이드 테이블 렌더링
+      const tbody = document.getElementById('orders-table-body');
+      if (tbody) {
+        if (visibleOrders.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="11" class="p-10 text-center text-slate-400">주문 내역이 없습니다.</td></tr>';
+        } else {
+          let rowsHtml = '';
+          if (visibleUnshipped.length > 0) {
+            rowsHtml += visibleUnshipped.map(buildTableRow).join('');
+          }
+          if (visibleUnshipped.length > 0 && visibleShipped.length > 0) {
+            rowsHtml += `
+              <tr class="bg-blue-50/80 border-y-2 border-blue-200">
+                <td colspan="11" class="py-2.5 px-4 text-center">
+                  <div class="flex items-center justify-center gap-3 text-xs font-black text-blue-900">
+                    <span class="h-px bg-blue-300 flex-1 max-w-[220px]"></span>
+                    <span>▲ 위쪽: 오늘 발송 대상 (미출고 ${visibleUnshipped.length}건) &nbsp;&nbsp;|&nbsp;&nbsp; ▼ 아래쪽: 출고 완료된 주문 (${visibleShipped.length}건)</span>
+                    <span class="h-px bg-blue-300 flex-1 max-w-[220px]"></span>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+          if (visibleShipped.length > 0) {
+            rowsHtml += visibleShipped.map(buildTableRow).join('');
+          }
+          if (visibleOther.length > 0) {
+            rowsHtml += visibleOther.map(buildTableRow).join('');
+          }
+          tbody.innerHTML = rowsHtml;
+        }
       }
 
       if (pageBox) {
