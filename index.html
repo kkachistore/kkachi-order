@@ -3118,7 +3118,7 @@
       if (!items || items.length === 0) {
         return [{
           productName: order.itemsSummary || '기본 상품',
-          qty: order.totalQty || 1
+          qty: 1
         }];
       }
 
@@ -3175,13 +3175,11 @@
         });
       }
 
-      const totalBoxes = rawBoxes.length;
-      return rawBoxes.map((b, idx) => {
+      return rawBoxes.map(b => {
         const itemsDesc = b.items.map(it => `${it.name} ${it.qty}개`).join(' + ');
-        const boxTag = totalBoxes > 1 ? ` [${idx + 1}/${totalBoxes}박스]` : ' [1/1박스]';
         return {
-          productName: `${itemsDesc}${boxTag}`,
-          qty: b.totalQty
+          productName: itemsDesc,
+          qty: 1
         };
       });
     }
@@ -3216,7 +3214,7 @@
             "주문번호": seqOrderId,
             "수령자명": o.receiverName || o.clientName || "",
             "상품명": box.productName,
-            "수량": box.qty,
+            "수량": 1,
             "수령자전화번호": o.receiverPhone || "",
             "수령자주소": o.receiverAddress || "",
             "메모": o.memo || ""
