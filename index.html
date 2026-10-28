@@ -593,17 +593,12 @@
       <span class="bg-[#3182f6] text-white text-xs font-black px-2.5 py-1 rounded-full" id="floating-selected-count">0건</span>
       <span class="text-xs font-bold text-slate-200">선택됨</span>
     </div>
-    <div class="flex items-center gap-1.5">
-      <button onclick="downloadSelectedDeliveryExcel('single')" class="toss-btn bg-[#3182f6] text-white text-xs font-bold px-2.5 py-2 rounded-xl shadow-xs">
-        다운로드
+    <div class="flex items-center gap-2">
+      <button onclick="downloadSelectedDeliveryExcel()" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-1.5" title="카톤 단위로 행이 자동 분할되어 1행=1송장으로 출력됩니다">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span>택배 엑셀 다운로드</span>
       </button>
-      <button onclick="downloadSelectedDeliveryExcel('box')" class="toss-btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-2 rounded-xl shadow-xs" title="카톤 박스 수만큼 행을 나누어 송장 여러 장 출력">
-        박스분할 다운
-      </button>
-      <button onclick="downloadSelectedDeliveryExcel('item')" class="toss-btn bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-2.5 py-2 rounded-xl">
-        품목분리 다운
-      </button>
-      <button onclick="clearAllSelections()" class="p-1.5 text-slate-400 hover:text-white rounded-lg">✕</button>
+      <button onclick="clearAllSelections()" class="p-2 text-slate-400 hover:text-white rounded-lg" title="선택 해제">✕</button>
     </div>
   </aside>
 
@@ -3110,88 +3105,133 @@
       }
     }
 
-    function downloadSelectedDeliveryExcel(mode = 'single') {
+    function packOrderIntoCartonBoxes(order) {
+      const items = ensureOrderItemsArray(order);
+      const groupsConfig = {
+        '기름단품': 24,
+        '350세트': 10,
+        '국산세트': 8,
+        '생강청': 20,
+        '육수한알': 20
+      };
+
+      if (!items || items.length === 0) {
+        return [{
+          productName: order.itemsSummary || '기본 상품',
+          qty: order.totalQty || 1
+        }];
+      }
+
+      // 품목 그룹별 묶기
+      const byGroup = {};
+      items.forEach(it => {
+        let grp = it.group;
+        if (!grp || !groupsConfig[grp]) {
+          const mp = MASTER_PRODUCTS.find(p => p.id === it.id || p.name === it.name);
+          grp = (mp && mp.group && groupsConfig[mp.group]) ? mp.group : '기름단품';
+        }
+        if (!byGroup[grp]) byGroup[grp] = [];
+        byGroup[grp].push({ name: it.name, qty: Number(it.qty) || 0 });
+      });
+
+      const rawBoxes = [];
+      Object.keys(byGroup).forEach(grp => {
+        const limit = groupsConfig[grp] || 24;
+        const gitems = byGroup[grp];
+        let curBoxItems = [];
+        let curBoxQty = 0;
+
+        gitems.forEach(it => {
+          let rem = it.qty;
+          while (rem > 0) {
+            const space = limit - curBoxQty;
+            const take = Math.min(rem, space);
+            const exist = curBoxItems.find(x => x.name === it.name);
+            if (exist) {
+              exist.qty += take;
+            } else {
+              curBoxItems.push({ name: it.name, qty: take });
+            }
+            curBoxQty += take;
+            rem -= take;
+
+            if (curBoxQty >= limit) {
+              rawBoxes.push({ items: curBoxItems, totalQty: curBoxQty });
+              curBoxItems = [];
+              curBoxQty = 0;
+            }
+          }
+        });
+
+        if (curBoxQty > 0) {
+          rawBoxes.push({ items: curBoxItems, totalQty: curBoxQty });
+        }
+      });
+
+      if (rawBoxes.length === 0) {
+        rawBoxes.push({
+          items: [{ name: order.itemsSummary || '기본 상품', qty: order.totalQty || 1 }],
+          totalQty: order.totalQty || 1
+        });
+      }
+
+      const totalBoxes = rawBoxes.length;
+      return rawBoxes.map((b, idx) => {
+        const itemsDesc = b.items.map(it => `${it.name} ${it.qty}개`).join(' + ');
+        const boxTag = totalBoxes > 1 ? ` [${idx + 1}/${totalBoxes}박스]` : ' [1/1박스]';
+        return {
+          productName: `${itemsDesc}${boxTag}`,
+          qty: b.totalQty
+        };
+      });
+    }
+
+    // 택배 프로그램 전용: 다운로드 당일 날짜 + 행마다 연속 일련번호(001, 002...) + 카톤 완포장 1행1송장 분할
+    function downloadSelectedDeliveryExcel() {
       if (selectedOrderIds.size === 0) return alert("다운로드할 주문을 먼저 체크박스로 선택해주세요.");
 
       let targets = orders.filter(o => selectedOrderIds.has(o.id) && o.status !== '주문취소');
       if (targets.length === 0) return alert("선택된 주문 중 유효한 주문이 없습니다.");
 
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const todayPrefix = `${yy}${mm}${dd}`;
+      let seqCounter = 1;
+
       let exportRows = [];
-      if (mode === true || mode === 'item') {
-        targets.forEach(o => {
-          if (o.items && o.items.length > 0) {
-            o.items.forEach(it => {
-              exportRows.push({
-                "주문번호": o.id,
-                "수령자명": o.receiverName,
-                "상품명": it.name,
-                "수량": it.qty,
-                "수령자전화번호": o.receiverPhone || "",
-                "수령자주소": o.receiverAddress,
-                "메모": o.memo || ""
-              });
-            });
-          } else {
-            exportRows.push({
-              "주문번호": o.id,
-              "수령자명": o.receiverName,
-              "상품명": o.itemsSummary,
-              "수량": 1,
-              "수령자전화번호": o.receiverPhone || "",
-              "수령자주소": o.receiverAddress,
-              "메모": o.memo || ""
-            });
+      targets.forEach(o => {
+        const boxes = packOrderIntoCartonBoxes(o);
+        if (!o.exportOrderIds) o.exportOrderIds = [];
+
+        boxes.forEach(box => {
+          const seqOrderId = `${todayPrefix}-${String(seqCounter).padStart(3, '0')}`;
+          seqCounter++;
+          if (!o.exportOrderIds.includes(seqOrderId)) {
+            o.exportOrderIds.push(seqOrderId);
           }
-        });
-      } else if (mode === 'box') {
-        // 박스 수량만큼 행을 분할하여 복수 송장이 바로 출력되도록 지원
-        targets.forEach(o => {
-          const pack = getOrderPackingInfo(o);
-          const boxCount = pack.totalBoxes || 1;
-          const baseItemName = o.itemsSummary || (o.items && o.items[0] ? o.items[0].name : '');
-          for (let b = 1; b <= boxCount; b++) {
-            const boxLabel = boxCount > 1 ? ` [${b}/${boxCount}박스]` : '';
-            exportRows.push({
-              "주문번호": o.id,
-              "수령자명": o.receiverName,
-              "상품명": `${baseItemName}${boxLabel}`,
-              "수량": 1,
-              "수령자전화번호": o.receiverPhone || "",
-              "수령자주소": o.receiverAddress,
-              "메모": o.memo || ""
-            });
-          }
-        });
-      } else {
-        targets.forEach(o => {
-          const pack = getOrderPackingInfo(o);
-          let cleanItemName = o.itemsSummary || '';
-          if (o.items && o.items.length === 1) {
-            cleanItemName = `${o.items[0].name} ${o.items[0].qty}개`;
-          }
-          if (pack.totalBoxes > 1) {
-            cleanItemName += ` [총${pack.totalBoxes}박스]`;
-          }
-          const actualQty = o.totalQty || (o.items ? o.items.reduce((a, c) => a + c.qty, 0) : 1);
 
           exportRows.push({
-            "주문번호": o.id,
-            "수령자명": o.receiverName,
-            "상품명": cleanItemName,
-            "수량": actualQty,
+            "주문번호": seqOrderId,
+            "수령자명": o.receiverName || o.clientName || "",
+            "상품명": box.productName,
+            "수량": box.qty,
             "수령자전화번호": o.receiverPhone || "",
-            "수령자주소": o.receiverAddress,
+            "수령자주소": o.receiverAddress || "",
             "메모": o.memo || ""
           });
         });
-      }
+      });
+
+      saveOrdersData(false);
 
       const ws = XLSX.utils.json_to_sheet(exportRows, {
         header: ["주문번호", "수령자명", "상품명", "수량", "수령자전화번호", "수령자주소", "메모"]
       });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "시트1");
-      XLSX.writeFile(wb, `택배출고_${new Date().toISOString().slice(2,10).replace(/-/g,'')}.xls`, { bookType: 'biff8' });
+      XLSX.writeFile(wb, `택배출고_${todayPrefix}.xls`, { bookType: 'biff8' });
     }
 
     function handleTrackingExcelUpload(event) {
@@ -3215,7 +3255,7 @@
 
           if (tracking) {
             const target = orders.find(o => 
-              (orderId && o.id === orderId) ||
+              (orderId && (o.id === orderId || (o.exportOrderIds && o.exportOrderIds.includes(orderId)))) ||
               (name && o.receiverName === name && (!phone || (o.receiverPhone && o.receiverPhone.replace(/[^0-9]/g, '').includes(phone)))) ||
               (name && o.receiverName === name)
             );
