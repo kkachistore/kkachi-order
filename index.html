@@ -346,8 +346,7 @@
           <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold w-full sm:w-auto overflow-x-auto">
             <button onclick="setListFilter('all')" id="filter-btn-all" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white shadow-xs text-slate-800 font-bold whitespace-nowrap">전체 (<span id="count-filter-all">0</span>)</button>
             <button onclick="setListFilter('unpaid')" id="filter-btn-unpaid" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-rose-600 font-bold whitespace-nowrap">미입금 (<span id="count-filter-unpaid">0</span>)</button>
-            <button onclick="setListFilter('paid')" id="filter-btn-paid" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-emerald-600 font-bold whitespace-nowrap">입금완료 (<span id="count-filter-paid">0</span>)</button>
-            <button onclick="setListFilter('hold')" id="filter-btn-hold" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-amber-600 font-bold whitespace-nowrap">⏸ 발송보류 (<span id="count-filter-hold">0</span>)</button>
+            <button onclick="setListFilter('tax-unissued')" id="filter-btn-tax-unissued" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-indigo-600 font-bold whitespace-nowrap">계산서 미발행 (<span id="count-filter-tax-unissued">0</span>)</button>
           </div>
 
           <div class="relative w-full sm:w-64">
@@ -2631,31 +2630,33 @@
     }
 
     function generateKakaoPreview(items, shippingFee, finalTotal) {
-      const clientName = document.getElementById('order-client-name').value || '거래처';
-      const receiverName = document.getElementById('order-receiver-name').value || '';
-      const phone = document.getElementById('order-receiver-phone').value || '';
-      const address = document.getElementById('order-receiver-address').value || '';
-      const memo = document.getElementById('order-memo').value || '';
+      const clientName = (document.getElementById('order-client-name').value || '').trim() || '거래처';
+      const receiverName = (document.getElementById('order-receiver-name').value || '').trim();
+      const phone = (document.getElementById('order-receiver-phone').value || '').trim();
+      const address = (document.getElementById('order-receiver-address').value || '').trim();
+      const memo = (document.getElementById('order-memo').value || '').trim();
 
       let lines = [];
-      lines.push(`[까치방앗간 주문확인]`);
-      lines.push(`주문이 정상 접수되었습니다.\n`);
+      lines.push(`[${clientName} 주문 내역]\n`);
       
-      lines.push(`[주문 내역]`);
-      if (items.length === 0) {
+      if (!items || items.length === 0) {
         lines.push(`• 품목을 담아주세요.`);
       } else {
-        items.forEach(it => {
-          lines.push(`• ${it.name} × ${it.qty}개 (${(it.price * it.qty).toLocaleString()}원)`);
+        const itemLines = items.map(it => {
+          const qty = Number(it.qty) || 1;
+          const price = Number(it.price) || 0;
+          const subtotal = qty * price;
+          return `• ${it.name}\n  ${qty}개 × ${price.toLocaleString()}원 = ${subtotal.toLocaleString()}원`;
         });
+        lines.push(itemLines.join('\n\n'));
       }
 
       if (shippingFee > 0) {
-        lines.push(`• 배송비: ${shippingFee.toLocaleString()}원`);
+        lines.push(`\n• 배송비: ${shippingFee.toLocaleString()}원`);
       }
 
-      lines.push(`──────────────`);
-      const taxLabel = isTaxExemptOrder ? '(면세)' : '(VAT포함)';
+      lines.push(`\n──────────────`);
+      const taxLabel = isTaxExemptOrder ? '(면세)' : '(과세)';
       lines.push(`최종 결제금액: ${finalTotal.toLocaleString()}원 ${taxLabel}\n`);
       
       lines.push(`[입금 계좌]`);
@@ -2691,24 +2692,24 @@
 
         <table class="w-full border-collapse border border-slate-400 text-[10px] mb-2">
           <tr>
-            <td class="bg-slate-100 font-bold p-1 text-center w-8 border-r border-b border-slate-400" rowspan="3">공<br>급<br>자</td>
-            <td class="bg-slate-50 p-1 border-r border-b border-slate-400 w-12 font-semibold">상호</td>
-            <td class="p-1 border-r border-b border-slate-400 font-bold">${SUPPLIER_INFO.name}</td>
             <td class="bg-slate-100 font-bold p-1 text-center w-8 border-r border-b border-slate-400" rowspan="3">공<br>급<br>받<br>는<br>자</td>
             <td class="bg-slate-50 p-1 border-r border-b border-slate-400 w-12 font-semibold">상호</td>
-            <td class="p-1 border-b border-slate-400 font-bold">${clientName}</td>
+            <td class="p-1 border-r border-b border-slate-400 font-bold">${clientName}</td>
+            <td class="bg-slate-100 font-bold p-1 text-center w-8 border-r border-b border-slate-400" rowspan="3">공<br>급<br>자</td>
+            <td class="bg-slate-50 p-1 border-r border-slate-400 w-12 font-semibold">상호</td>
+            <td class="p-1 border-b border-slate-400 font-bold">${SUPPLIER_INFO.name}</td>
           </tr>
           <tr>
-            <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">대표자</td>
-            <td class="p-1 border-r border-slate-400">${SUPPLIER_INFO.ceo}</td>
             <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">수령인</td>
-            <td class="p-1 border-b border-slate-400">${receiverName || '-'}</td>
+            <td class="p-1 border-r border-slate-400">${receiverName || '-'}</td>
+            <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">대표자</td>
+            <td class="p-1 border-b border-slate-400">${SUPPLIER_INFO.ceo}</td>
           </tr>
           <tr>
-            <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">연락처</td>
-            <td class="p-1 border-r border-slate-400 font-mono">${SUPPLIER_INFO.phone}</td>
             <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">작성일</td>
-            <td class="p-1 font-mono">${today}</td>
+            <td class="p-1 border-r border-slate-400 font-mono">${today}</td>
+            <td class="bg-slate-50 p-1 border-r border-slate-400 font-semibold">연락처</td>
+            <td class="p-1 border-b border-slate-400 font-mono">${SUPPLIER_INFO.phone}</td>
           </tr>
         </table>
 
@@ -3324,8 +3325,7 @@
     function toggleSelectAllOrders(checked) {
       let filtered = orders.filter(o => o.status !== '주문취소' && o.status !== '발송보류');
       if (listFilter === 'unpaid') filtered = filtered.filter(o => o.paymentStatus !== 'paid');
-      if (listFilter === 'paid') filtered = filtered.filter(o => o.paymentStatus === 'paid');
-      if (listFilter === 'hold') filtered = orders.filter(o => o.status === '발송보류');
+      if (listFilter === 'tax-unissued') filtered = filtered.filter(o => o.taxInvoiceStatus !== 'issued');
 
       filtered.forEach(o => {
         if (checked) selectedOrderIds.add(o.id);
@@ -3388,12 +3388,10 @@
       const validOrders = orders.filter(o => o.status !== '주문취소');
       const countAll = document.getElementById('count-filter-all');
       const countUnpaid = document.getElementById('count-filter-unpaid');
-      const countPaid = document.getElementById('count-filter-paid');
-      const countHold = document.getElementById('count-filter-hold');
+      const countTaxUnissued = document.getElementById('count-filter-tax-unissued');
       if (countAll) countAll.textContent = validOrders.length;
       if (countUnpaid) countUnpaid.textContent = validOrders.filter(o => o.paymentStatus !== 'paid').length;
-      if (countPaid) countPaid.textContent = validOrders.filter(o => o.paymentStatus === 'paid').length;
-      if (countHold) countHold.textContent = validOrders.filter(o => o.status === '발송보류').length;
+      if (countTaxUnissued) countTaxUnissued.textContent = validOrders.filter(o => o.taxInvoiceStatus !== 'issued').length;
 
       // 주문 분류 헬퍼
       const isUnshipped = (o) => o.status !== '주문취소' && o.status !== '발송보류' && (!o.trackingNo || !o.trackingNo.trim());
@@ -3407,8 +3405,7 @@
 
       let filtered = orders.filter(o => {
         if (listFilter === 'unpaid' && (o.paymentStatus === 'paid' || o.status === '주문취소')) return false;
-        if (listFilter === 'paid' && (o.paymentStatus !== 'paid' || o.status === '주문취소')) return false;
-        if (listFilter === 'hold' && o.status !== '발송보류') return false;
+        if (listFilter === 'tax-unissued' && (o.taxInvoiceStatus === 'issued' || o.status === '주문취소')) return false;
         if (search) {
           return (o.clientName && o.clientName.toLowerCase().includes(search)) ||
                  (o.receiverName && o.receiverName.toLowerCase().includes(search)) ||
@@ -3713,7 +3710,7 @@
     function setListFilter(filter) {
       listFilter = filter;
       ordersDisplayLimit = PAGE_SIZE_DEFAULT;
-      ['all', 'unpaid', 'paid', 'hold'].forEach(f => {
+      ['all', 'unpaid', 'tax-unissued'].forEach(f => {
         const btn = document.getElementById(`filter-btn-${f}`);
         if (!btn) return;
         if (f === filter) btn.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white shadow-xs text-slate-800 font-bold whitespace-nowrap';
@@ -4052,12 +4049,28 @@
 
       let msg = "";
       if (tab === 'order') {
-        msg = `[까치방앗간 주문확인]\n주문이 정상 접수되었습니다.\n\n` +
-              `[주문 내역]\n` +
-              (order.items && order.items.length > 0 ? 
-                order.items.map(i => `• ${i.name} × ${i.qty}개 (${(i.price * i.qty).toLocaleString()}원)`).join('\n') : `• ${order.itemsSummary}\n`) +
-              (order.shippingFee > 0 ? `\n• 배송비: ${order.shippingFee.toLocaleString()}원` : '') +
-              `\n──────────────\n최종 결제금액: ${order.totalPrice.toLocaleString()}원 ${order.isTaxExempt ? '(면세)' : '(VAT포함)'}\n\n` +
+        const items = (order.items && order.items.length > 0) 
+          ? order.items 
+          : ensureOrderItemsArray(order);
+        let itemsStr = '';
+        if (items && items.length > 0) {
+          itemsStr = items.map(it => {
+            const qty = Number(it.qty) || 1;
+            const price = Number(it.price) || 0;
+            const subtotal = qty * price;
+            return `• ${it.name}\n  ${qty}개 × ${price.toLocaleString()}원 = ${subtotal.toLocaleString()}원`;
+          }).join('\n\n');
+        } else {
+          itemsStr = `• ${order.itemsSummary || '품목'}\n  ${order.totalQty || 1}개 = ${(order.totalPrice || 0).toLocaleString()}원`;
+        }
+
+        const shippingStr = order.shippingFee > 0 ? `\n\n• 배송비: ${Number(order.shippingFee).toLocaleString()}원` : '';
+        const taxLabel = order.isTaxExempt ? '(면세)' : '(과세)';
+
+        msg = `[${order.clientName} 주문 내역]\n\n` +
+              itemsStr +
+              shippingStr +
+              `\n\n──────────────\n최종 결제금액: ${(order.totalPrice || 0).toLocaleString()}원 ${taxLabel}\n\n` +
               `[입금 계좌]\n${SUPPLIER_INFO.bankBiz}\n\n` +
               `[배송지 정보]\n• 수령인: ${order.receiverName} 님 ${order.receiverPhone ? `(${order.receiverPhone})` : ''}\n• 배송주소: ${order.receiverAddress}\n` +
               (order.memo ? `• 요청사항: ${order.memo}\n` : '') +
