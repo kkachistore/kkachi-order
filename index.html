@@ -164,7 +164,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 relative">
                 <div class="sm:col-span-1">
                   <label class="text-[11px] font-semibold text-slate-500 mb-1 block">거래처 상호명</label>
-                  <input type="text" id="order-client-name" oninput="handleClientSearch(this.value)" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
+                  <input type="text" id="order-client-name" oninput="handleClientSearch(this.value); calculateNewOrderTotals();" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
                   <div id="client-autocomplete" class="hidden absolute top-14 left-0 w-full sm:w-72 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto"></div>
                 </div>
                 <div>
@@ -213,19 +213,19 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령인 성함/매장</label>
-                  <input type="text" id="order-receiver-name" placeholder="홍길동" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                  <input type="text" id="order-receiver-name" oninput="calculateNewOrderTotals()" placeholder="홍길동" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
                 </div>
                 <div>
                   <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령자 전화번호</label>
-                  <input type="text" id="order-receiver-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
+                  <input type="text" id="order-receiver-phone" oninput="formatPhoneInput(this); calculateNewOrderTotals();" placeholder="010-0000-0000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
                 </div>
                 <div class="sm:col-span-2">
                   <label class="text-[11px] font-semibold text-slate-500 mb-1 block">수령자 주소 (상세주소 포함)</label>
-                  <input type="text" id="order-receiver-address" placeholder="도로명 또는 지번 주소" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                  <input type="text" id="order-receiver-address" oninput="calculateNewOrderTotals()" placeholder="도로명 또는 지번 주소" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
                 </div>
                 <div>
                   <label class="text-[11px] font-semibold text-slate-500 mb-1 block">택배 배송메모 (송장 출력용)</label>
-                  <input type="text" id="order-memo" placeholder="부재 시 문 앞 보관 등" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
+                  <input type="text" id="order-memo" oninput="calculateNewOrderTotals()" placeholder="부재 시 문 앞 보관 등" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
                 </div>
                 <div>
                   <label class="text-[11px] font-bold text-amber-700 mb-1 block">📌 사내 작업메모 (발송담당자 전달용)</label>
@@ -753,11 +753,16 @@
       <button onclick="closeOrderDrawer()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg text-lg">✕</button>
     </div>
 
-    <!-- 택배 발송용 받는분/연락처/주소 (텍스트 클릭 시 즉시 자동 복사) -->
+    <!-- 택배 발송용 받는분/연락처/주소 (텍스트 클릭 시 즉시 자동 복사 + 수정 지원) -->
     <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2 text-xs">
       <div class="flex items-center justify-between border-b border-slate-200/70 pb-1.5">
         <span class="font-bold text-slate-700 text-[11px]">🚚 수령인 배송 정보</span>
-        <span class="text-[10px] text-blue-600 font-semibold">각 줄을 클릭하면 바로 복사됩니다</span>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="openShippingEditModal()" class="toss-btn text-[11px] bg-blue-50 text-[#3182f6] hover:bg-blue-100 font-bold px-2 py-0.5 rounded-lg border border-blue-200 flex items-center gap-0.5" title="배송지 주소, 수령인, 연락처 수정">
+            <span>배송지 수정 ✏️</span>
+          </button>
+          <span class="text-[10px] text-slate-400 font-medium">클릭시 복사</span>
+        </div>
       </div>
       <div class="grid grid-cols-1 gap-1.5">
         <div onclick="copyDrawerShippingField('name')" class="flex items-center gap-2 bg-white hover:bg-blue-50/60 px-3 py-2 rounded-xl border border-slate-200/80 cursor-pointer transition" title="클릭하여 받는분 성함 복사">
@@ -998,6 +1003,51 @@
       <div class="flex justify-end gap-1.5 pt-1 border-t border-slate-100">
         <button type="button" onclick="closeTrackingEditModal()" class="toss-btn text-xs bg-slate-100 text-slate-600 px-3.5 py-2 rounded-xl font-semibold">취소</button>
         <button type="button" onclick="saveTrackingFromModal()" class="toss-btn text-xs bg-[#3182f6] hover:bg-blue-600 text-white font-bold px-5 py-2 rounded-xl shadow-xs">송장 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [모달 5-3] 주문 배송지 정보 수정 모달 -->
+  <div id="shipping-edit-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+        <div>
+          <h3 class="font-extrabold text-sm text-slate-900">🚚 주문 배송지 정보 수정</h3>
+          <p id="shipping-modal-subtitle" class="text-[11px] text-slate-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="closeShippingEditModal()" class="text-slate-400 hover:text-slate-700 text-lg">✕</button>
+      </div>
+      
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="font-semibold text-slate-500 block mb-0.5">수령인 성함/매장</label>
+          <input type="text" id="modal-shipping-name" placeholder="홍길동" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-bold">
+        </div>
+        <div>
+          <label class="font-semibold text-slate-500 block mb-0.5">수령자 연락처</label>
+          <input type="text" id="modal-shipping-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono">
+        </div>
+        <div>
+          <label class="font-semibold text-slate-500 block mb-0.5">수령자 주소 (상세주소 포함)</label>
+          <input type="text" id="modal-shipping-address" placeholder="도로명 또는 지번 주소" class="w-full p-2 border border-slate-200 rounded-xl outline-none">
+        </div>
+        <div>
+          <label class="font-semibold text-slate-500 block mb-0.5">택배 배송메모 (송장 출력용)</label>
+          <input type="text" id="modal-shipping-memo" placeholder="부재 시 문 앞 보관 등" class="w-full p-2 border border-slate-200 rounded-xl outline-none">
+        </div>
+        
+        <label class="flex items-start gap-2 bg-blue-50/70 p-2.5 rounded-xl border border-blue-200 text-xs cursor-pointer mt-1">
+          <input type="checkbox" id="modal-shipping-sync-client-chk" class="mt-0.5 rounded text-[#3182f6]">
+          <div>
+            <span class="font-bold text-slate-800">이 주소를 거래처의 기본 주소로도 저장</span>
+            <span class="block text-[10px] text-slate-500 mt-0.5">매장 이전이나 오타 수정 시 체크하세요. (1회성 분점/선물 발송이면 체크 해제)</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="flex justify-end gap-1.5 pt-1 border-t border-slate-100">
+        <button type="button" onclick="closeShippingEditModal()" class="toss-btn text-xs bg-slate-100 text-slate-600 px-3.5 py-2 rounded-xl font-semibold">취소</button>
+        <button type="button" onclick="saveShippingFromModal()" class="toss-btn text-xs bg-[#3182f6] hover:bg-blue-600 text-white font-bold px-5 py-2 rounded-xl shadow-xs">배송지 저장 완료</button>
       </div>
     </div>
   </div>
@@ -2592,11 +2642,23 @@
       document.getElementById('order-receiver-name').value = decodeURIComponent(recName);
       document.getElementById('order-receiver-phone').value = decodeURIComponent(phone);
       document.getElementById('order-receiver-address').value = decodeURIComponent(addr);
+      calculateNewOrderTotals();
     }
 
     function toggleSyncReceiver(checked) {
       if (checked) {
-        document.getElementById('order-receiver-name').value = document.getElementById('order-client-name').value;
+        const cName = document.getElementById('order-client-name').value.trim();
+        document.getElementById('order-receiver-name').value = cName;
+        const matched = clients.find(c => c.name.toLowerCase() === cName.toLowerCase());
+        if (matched) {
+          if (matched.receiverPhone && !document.getElementById('order-receiver-phone').value.trim()) {
+            document.getElementById('order-receiver-phone').value = matched.receiverPhone;
+          }
+          if (matched.receiverAddress && !document.getElementById('order-receiver-address').value.trim()) {
+            document.getElementById('order-receiver-address').value = matched.receiverAddress;
+          }
+        }
+        calculateNewOrderTotals();
       }
     }
 
@@ -2663,11 +2725,16 @@
       lines.push(`${SUPPLIER_INFO.bankBiz}\n`);
 
       lines.push(`[배송지 정보]`);
-      if (receiverName) lines.push(`• 수령인: ${receiverName} 님 ${phone ? `(${phone})` : ''}`);
-      if (address) lines.push(`• 배송주소: ${address}`);
-      if (memo) lines.push(`• 요청사항: ${memo}`);
+      const destName = (receiverName && receiverName !== clientName) ? `  ${receiverName}` : (receiverName ? `  ${receiverName}` : '');
+      if (address) {
+        lines.push(`${address}${destName}`);
+      } else if (receiverName) {
+        lines.push(`${receiverName}`);
+      }
+      if (phone) lines.push(phone);
+      if (memo) lines.push(`요청사항: ${memo}`);
 
-      lines.push(`\n정성껏 준비해서 빠르게 발송해 드리겠습니다.`);
+      lines.push(`\n정성껏 준비해서 발송해 드리겠습니다.`);
 
       document.getElementById('kakao-preview-textarea').value = lines.join('\n');
     }
@@ -2751,8 +2818,9 @@
     }
 
     function copyKakaoMsgFromForm() {
+      calculateNewOrderTotals();
       const text = document.getElementById('kakao-preview-textarea').value;
-      navigator.clipboard.writeText(text).then(() => alert("카톡 안내문이 복사되었습니다!"));
+      navigator.clipboard.writeText(text).then(() => showCopyToast("✓ 카톡 안내문이 복사되었습니다!"));
     }
 
     function shareOrCopyInvoiceImage(elementId) {
@@ -3220,14 +3288,19 @@
             o.exportOrderIds.push(seqOrderId);
           }
 
+          const cleanName = String(o.receiverName || o.clientName || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+          const cleanPhone = String(o.receiverPhone || '').replace(/[\r\n]+/g, '').replace(/\s+/g, '').trim();
+          const cleanAddr = String(o.receiverAddress || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+          const cleanMemo = String(o.memo || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+
           exportRows.push({
             "주문번호": seqOrderId,
-            "수령자명": o.receiverName || o.clientName || "",
+            "수령자명": cleanName,
             "상품명": box.productName,
             "수량": 1,
-            "수령자전화번호": o.receiverPhone || "",
-            "수령자주소": o.receiverAddress || "",
-            "메모": o.memo || ""
+            "수령자전화번호": cleanPhone,
+            "수령자주소": cleanAddr,
+            "메모": cleanMemo
           });
         });
       });
@@ -3881,6 +3954,61 @@
       showCopyToast('✓ 송장번호가 저장되었습니다');
     }
 
+    // [주문 배송지 수정 모달 열기 및 저장]
+    function openShippingEditModal() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+      document.getElementById('shipping-modal-subtitle').textContent = `주문번호: ${order.id} (${order.clientName})`;
+      document.getElementById('modal-shipping-name').value = order.receiverName || order.clientName || '';
+      document.getElementById('modal-shipping-phone').value = order.receiverPhone || '';
+      document.getElementById('modal-shipping-address').value = order.receiverAddress || '';
+      document.getElementById('modal-shipping-memo').value = order.memo || '';
+      document.getElementById('modal-shipping-sync-client-chk').checked = false;
+      document.getElementById('shipping-edit-modal').classList.remove('hidden');
+    }
+
+    function closeShippingEditModal() {
+      document.getElementById('shipping-edit-modal').classList.add('hidden');
+    }
+
+    function saveShippingFromModal() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+      const newName = (document.getElementById('modal-shipping-name')?.value || '').trim() || order.clientName;
+      const newPhone = (document.getElementById('modal-shipping-phone')?.value || '').trim();
+      const newAddr = (document.getElementById('modal-shipping-address')?.value || '').trim();
+      const newMemo = (document.getElementById('modal-shipping-memo')?.value || '').trim();
+      const syncToClient = Boolean(document.getElementById('modal-shipping-sync-client-chk')?.checked);
+
+      if (!newAddr) return alert("배송지 주소를 입력해주세요.");
+
+      order.receiverName = newName;
+      order.receiverPhone = newPhone;
+      order.receiverAddress = newAddr;
+      order.memo = newMemo;
+
+      if (!order.auditLogs) order.auditLogs = [];
+      order.auditLogs.push(`[${new Date().toISOString().slice(0, 16).replace('T', ' ')}] 배송지 수정: ${newAddr} (${newName})`);
+
+      if (syncToClient) {
+        let client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
+        if (client) {
+          if (newName) client.receiverName = newName;
+          if (newPhone) client.receiverPhone = newPhone;
+          client.receiverAddress = newAddr;
+          localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
+          syncClientToGoogleSheet(client);
+        }
+      }
+
+      saveOrdersData();
+      syncOrderToGoogleSheet(order, 'status');
+      renderOrdersTable();
+      openOrderDrawer(order.id);
+      closeShippingEditModal();
+      showCopyToast("✓ 배송지 정보가 정상 수정되었습니다!");
+    }
+
     function editInternalMemoInline(orderId) {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
@@ -4067,14 +4195,25 @@
         const shippingStr = order.shippingFee > 0 ? `\n\n• 배송비: ${Number(order.shippingFee).toLocaleString()}원` : '';
         const taxLabel = order.isTaxExempt ? '(면세)' : '(과세)';
 
+        const recName = (order.receiverName || order.clientName || '').trim();
+        const destName = (recName && recName !== order.clientName) ? `  ${recName}` : (recName ? `  ${recName}` : '');
+        let shippingInfoLines = [];
+        shippingInfoLines.push(`[배송지 정보]`);
+        if (order.receiverAddress) {
+          shippingInfoLines.push(`${order.receiverAddress}${destName}`);
+        } else if (recName) {
+          shippingInfoLines.push(recName);
+        }
+        if (order.receiverPhone) shippingInfoLines.push(order.receiverPhone);
+        if (order.memo) shippingInfoLines.push(`요청사항: ${order.memo}`);
+
         msg = `[${order.clientName} 주문 내역]\n\n` +
               itemsStr +
               shippingStr +
               `\n\n──────────────\n최종 결제금액: ${(order.totalPrice || 0).toLocaleString()}원 ${taxLabel}\n\n` +
               `[입금 계좌]\n${SUPPLIER_INFO.bankBiz}\n\n` +
-              `[배송지 정보]\n• 수령인: ${order.receiverName} 님 ${order.receiverPhone ? `(${order.receiverPhone})` : ''}\n• 배송주소: ${order.receiverAddress}\n` +
-              (order.memo ? `• 요청사항: ${order.memo}\n` : '') +
-              `\n정성껏 준비해서 빠르게 발송해 드리겠습니다.`;
+              shippingInfoLines.join('\n') +
+              `\n\n정성껏 준비해서 발송해 드리겠습니다.`;
       } else if (tab === 'shipping') {
         msg = `[까치방앗간 발송안내]\n주문하신 상품이 오늘 출고되었습니다.\n\n` +
               `• 택배사: ${order.courier || 'CJ대한통운'}\n` +
