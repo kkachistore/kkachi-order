@@ -2151,32 +2151,38 @@
       }
 
       container.innerHTML = currentOrderItems.map((item, idx) => `
-        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-extrabold text-slate-900 text-sm truncate flex-1">${item.name}</span>
-            <button onclick="removeItemRow(${idx})" class="text-slate-300 hover:text-rose-500 font-bold p-1">✕</button>
-          </div>
-          
-          <div class="flex items-center justify-between gap-1">
-            <div class="flex items-center gap-1">
-              ${item.lastPrice ? `<span class="bg-blue-100 text-[#3182f6] px-2 py-0.5 rounded font-black text-[11px]">직전: ${item.lastPrice.toLocaleString()}원</span>` : ''}
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
+              <span class="font-extrabold text-slate-900 text-sm truncate">${item.name}</span>
+              ${item.lastPrice ? `<span class="bg-blue-50 text-[#3182f6] border border-blue-200 px-1.5 py-0.2 rounded font-bold text-[10px] shrink-0">직전: ${item.lastPrice.toLocaleString()}원</span>` : ''}
             </div>
-
-            <div class="flex items-center gap-1">
-              <span class="text-slate-500 font-bold text-xs">단가:</span>
-              <input type="number" value="${item.price}" step="100" class="w-24 text-right p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-black text-sm text-[#191f28] outline-none focus:ring-2 focus:ring-blue-500" oninput="setItemPriceDirect(${idx}, this.value)">
-              <span class="text-slate-600 font-bold text-xs">원</span>
-            </div>
+            <button type="button" onclick="removeItemRow(${idx})" class="text-slate-300 hover:text-rose-500 font-bold p-1 text-sm leading-none shrink-0" title="품목 삭제">✕</button>
           </div>
 
-          <div class="flex items-center justify-between pt-1 border-t border-slate-200/60">
-            <div class="flex items-center gap-1.5">
-              <button onclick="changeItemQty(${idx}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm">-</button>
-              <input type="number" value="${item.qty}" min="1" class="w-16 text-center py-1 bg-white border border-slate-300 rounded-md font-black text-sm text-[#191f28] shadow-xs outline-none focus:ring-2 focus:ring-blue-500" onchange="setItemQtyDirect(${idx}, this.value)">
-              <button onclick="changeItemQty(${idx}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm">+</button>
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60 flex-wrap sm:flex-nowrap">
+            <!-- 좌측: 수량 조절 버튼 + 곱하기(×) + 단가 입력창 한 묶음 -->
+            <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="changeItemQty(${idx}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm shadow-2xs">-</button>
+                <input type="number" value="${item.qty}" min="1" class="w-12 text-center py-1 bg-white border border-slate-300 rounded-md font-black text-sm text-[#191f28] shadow-xs outline-none focus:ring-2 focus:ring-blue-500" onchange="setItemQtyDirect(${idx}, this.value)">
+                <button type="button" onclick="changeItemQty(${idx}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-md text-slate-700 font-bold active:bg-slate-100 text-sm shadow-2xs">+</button>
+              </div>
+
+              <span class="text-slate-400 font-bold text-xs mx-0.5">×</span>
+
+              <div class="flex items-center gap-1">
+                <span class="text-slate-500 font-bold text-xs">단가</span>
+                <input type="number" value="${item.price}" step="100" class="w-20 sm:w-24 text-right p-1 bg-white border border-slate-300 rounded-lg font-mono font-black text-sm text-[#191f28] outline-none focus:ring-2 focus:ring-blue-500" oninput="setItemPriceDirect(${idx}, this.value)">
+                <span class="text-slate-600 font-bold text-xs">원</span>
+              </div>
             </div>
-            <div id="item-row-total-${idx}" class="font-black text-slate-900 font-mono text-sm">
-              ${(item.price * item.qty).toLocaleString()}원
+
+            <!-- 우측: 합계 금액 -->
+            <div class="text-right shrink-0 ml-auto">
+              <div id="item-row-total-${idx}" class="font-black text-slate-900 font-mono text-sm sm:text-base">
+                ${(item.price * item.qty).toLocaleString()}원
+              </div>
             </div>
           </div>
         </div>
