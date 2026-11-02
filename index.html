@@ -368,6 +368,10 @@
             <button type="button" onclick="clearAllSelections()" class="toss-btn text-slate-400 hover:text-slate-700 text-xs px-1.5 py-1">
               선택해제
             </button>
+            <button type="button" onclick="handleToolbarDeliveryExcelDownload()" class="toss-btn bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1 text-xs" title="선택된 주문(또는 오늘 미출고 전체)을 택배용 엑셀로 다운로드합니다">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>택배 엑셀 다운로드</span>
+            </button>
           </div>
 
           <label class="toss-btn bg-[#191f28] text-white px-3 py-1.5 rounded-lg font-bold cursor-pointer text-center flex items-center gap-1 shadow-xs text-xs">
@@ -387,7 +391,7 @@
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-500 font-bold whitespace-nowrap">
               <tr>
-                <th class="py-3.5 px-3 w-10 text-center">선택</th>
+                <th class="py-3.5 px-3 w-10 text-center"><input type="checkbox" id="chk-table-header-all" onclick="toggleSelectAllOrders(this.checked)" title="화면 전체 선택" class="w-3.5 h-3.5 rounded text-[#3182f6] cursor-pointer"></th>
                 <th class="py-3.5 px-3 w-28">주문일시</th>
                 <th class="py-3.5 px-3 w-36">발주처</th>
                 <th class="py-3.5 px-3 min-w-[240px]">수령인 · 연락처 · 배송지 <span class="text-[10px] text-blue-600 font-normal">(항목 클릭시 자동복사)</span></th>
@@ -602,9 +606,12 @@
       <span class="text-xs font-bold text-slate-200">선택됨</span>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="downloadSelectedDeliveryExcel()" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-1.5" title="카톤 단위로 행이 자동 분할되어 1행=1송장으로 출력됩니다">
+      <button onclick="downloadSelectedDeliveryExcel('xlsx')" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-1.5" title="카톤 단위로 행이 자동 분할되어 1행=1송장으로 출력됩니다 (보안 차단 없는 표준 엑셀)">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        <span>택배 엑셀 다운로드</span>
+        <span>택배 엑셀 다운로드 (.xlsx)</span>
+      </button>
+      <button onclick="downloadSelectedDeliveryExcel('xls')" class="toss-btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold px-3 py-2.5 rounded-xl shadow-xs flex items-center gap-1" title="구형 택배 프로그램 전용 .xls 형식">
+        <span>구버전 .xls</span>
       </button>
       <button onclick="clearAllSelections()" class="p-2 text-slate-400 hover:text-white rounded-lg" title="선택 해제">✕</button>
     </div>
@@ -3268,12 +3275,41 @@
       });
     }
 
+    // 툴바의 빠른 택배 엑셀 다운로드 (선택된 주문이 없으면 미출고 주문 자동 선택 후 다운)
+    function handleToolbarDeliveryExcelDownload() {
+      if (selectedOrderIds.size === 0) {
+        const unshipped = orders.filter(o => 
+          o.status !== '주문취소' && 
+          o.status !== '발송보류' && 
+          (!o.trackingNo || !o.trackingNo.trim())
+        );
+        if (unshipped.length > 0) {
+          unshipped.forEach(o => selectedOrderIds.add(o.id));
+          renderOrdersTable();
+          updateFloatingBarUI();
+          showCopyToast(`오늘 미출고 ${unshipped.length}건이 자동 선택되어 다운로드됩니다.`);
+        } else {
+          return alert("다운로드할 주문을 먼저 체크박스로 선택해주세요.\n(현재 출고 대기 중인 미출고 주문이 없습니다)");
+        }
+      }
+      downloadSelectedDeliveryExcel('xlsx');
+    }
+
     // 택배 프로그램 전용: 다운로드 당일 날짜 + 행마다 연속 일련번호(001, 002...) + 카톤 완포장 1행1송장 분할
-    function downloadSelectedDeliveryExcel() {
-      if (selectedOrderIds.size === 0) return alert("다운로드할 주문을 먼저 체크박스로 선택해주세요.");
+    // format: 'xlsx' (최신 표준, 브라우저 보안 차단 위험 0%) 또는 'xls' (구형 택배 단말기 호환용)
+    function downloadSelectedDeliveryExcel(format = 'xlsx') {
+      if (selectedOrderIds.size === 0) {
+        return alert("다운로드할 주문을 먼저 체크박스로 선택해주세요.");
+      }
 
       let targets = orders.filter(o => selectedOrderIds.has(o.id) && o.status !== '주문취소');
-      if (targets.length === 0) return alert("선택된 주문 중 유효한 주문이 없습니다.");
+      if (targets.length === 0) {
+        return alert("선택된 주문 중 유효한 주문이 없습니다.");
+      }
+
+      if (typeof XLSX === 'undefined') {
+        return alert("엑셀 처리 라이브러리(SheetJS)가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+      }
 
       const now = new Date();
       const yy = String(now.getFullYear()).slice(2);
@@ -3311,14 +3347,60 @@
         });
       });
 
+      if (exportRows.length === 0) {
+        return alert("엑셀로 변환할 품목 데이터가 없습니다.");
+      }
+
       saveOrdersData(false);
 
-      const ws = XLSX.utils.json_to_sheet(exportRows, {
-        header: ["주문번호", "수령자명", "상품명", "수량", "수령자전화번호", "수령자주소", "메모"]
-      });
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "시트1");
-      XLSX.writeFile(wb, `택배출고_${todayPrefix}.xls`, { bookType: 'biff8' });
+      try {
+        const ws = XLSX.utils.json_to_sheet(exportRows, {
+          header: ["주문번호", "수령자명", "상품명", "수량", "수령자전화번호", "수령자주소", "메모"]
+        });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "시트1");
+
+        const isLegacyXls = (format === 'xls');
+        const filename = `택배출고_${todayPrefix}.${isLegacyXls ? 'xls' : 'xlsx'}`;
+
+        if (isLegacyXls) {
+          try {
+            const wbout = XLSX.write(wb, { bookType: 'biff8', type: 'array' });
+            triggerBlobDownload(wbout, filename, 'application/vnd.ms-excel');
+          } catch (writeErr) {
+            XLSX.writeFile(wb, filename, { bookType: 'biff8' });
+          }
+        } else {
+          try {
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            triggerBlobDownload(wbout, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          } catch (writeErr) {
+            XLSX.writeFile(wb, filename);
+          }
+        }
+
+        showCopyToast(`✓ 택배 엑셀 (${exportRows.length}박스 / ${targets.length}건) 다운로드 완료!`);
+      } catch (err) {
+        console.error("Delivery excel export error:", err);
+        alert("엑셀 파일 다운로드 중 오류가 발생했습니다: " + (err.message || err));
+      }
+    }
+
+    // 브라우저 팝업/다운로드 보안 차단 방지용 안전 Blob 다운로드 헬퍼
+    function triggerBlobDownload(arrayBuffer, filename, mimeType) {
+      const blob = new Blob([arrayBuffer], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {}
+      }, 1000);
     }
 
     function handleTrackingExcelUpload(event) {
@@ -3410,14 +3492,22 @@
         if (checked) selectedOrderIds.add(o.id);
         else selectedOrderIds.delete(o.id);
       });
+
+      const chk1 = document.getElementById('chk-all-orders');
+      const chk2 = document.getElementById('chk-table-header-all');
+      if (chk1) chk1.checked = checked;
+      if (chk2) chk2.checked = checked;
+
       renderOrdersTable();
       updateFloatingBarUI();
     }
 
     function clearAllSelections() {
       selectedOrderIds.clear();
-      const allChk = document.getElementById('chk-all-orders');
-      if (allChk) allChk.checked = false;
+      const chk1 = document.getElementById('chk-all-orders');
+      const chk2 = document.getElementById('chk-table-header-all');
+      if (chk1) chk1.checked = false;
+      if (chk2) chk2.checked = false;
       renderOrdersTable();
       updateFloatingBarUI();
     }
@@ -3621,7 +3711,7 @@
         return `
             <tr class="cursor-pointer transition ${o.status === '주문취소' ? 'opacity-45 line-through' : rowStyle}">
               <td class="py-3.5 px-3 text-center align-top whitespace-nowrap" onclick="event.stopPropagation()">
-                <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onchange="toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6] ${unshipped ? 'border-blue-400 ring-1 ring-blue-300' : 'border-slate-300'} mt-0.5 cursor-pointer">
+                <input type="checkbox" ${selectedOrderIds.has(o.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleOrderSelection('${o.id}', this.checked)" onchange="toggleOrderSelection('${o.id}', this.checked)" class="w-4 h-4 rounded text-[#3182f6] ${unshipped ? 'border-blue-400 ring-1 ring-blue-300' : 'border-slate-300'} mt-0.5 cursor-pointer">
                 <div class="mt-1">
                   ${unshipped ? '<span class="inline-block text-[10px] bg-blue-50 text-[#3182f6] px-1.5 py-0.5 rounded font-black border border-blue-200">출고대기</span>' : ''}
                   ${shipped ? '<span class="inline-block text-[10px] text-slate-400">출고완료</span>' : ''}
