@@ -161,20 +161,14 @@
                 </div>
               </div>
               
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 relative">
-                <div class="sm:col-span-1">
-                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">거래처 상호명</label>
-                  <input type="text" id="order-client-name" oninput="handleClientSearch(this.value); calculateNewOrderTotals();" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
-                  <div id="client-autocomplete" class="hidden absolute top-14 left-0 w-full sm:w-72 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto"></div>
-                </div>
-                <div>
-                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">사업자등록번호</label>
-                  <input type="text" id="order-biz-num" oninput="formatBizNumInput(this)" placeholder="000-00-00000" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-mono">
-                </div>
-                <div>
-                  <label class="text-[11px] font-semibold text-slate-500 mb-1 block">계산서 이메일</label>
-                  <input type="email" id="order-client-email" placeholder="tax@example.com" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none">
-                </div>
+              <div class="relative">
+                <label class="text-[11px] font-semibold text-slate-500 mb-1 block">거래처 상호명</label>
+                <input type="text" id="order-client-name" oninput="handleClientSearch(this.value); calculateNewOrderTotals();" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
+                <div id="client-autocomplete" class="hidden absolute top-14 left-0 w-full sm:w-80 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto"></div>
+                <!-- 세무 정보는 거래처 선택 시 자동 연동되며 화면에는 미표시 (거래처/이력 탭에서 관리) -->
+                <input type="hidden" id="order-biz-num">
+                <input type="hidden" id="order-ceo-name">
+                <input type="hidden" id="order-client-email">
               </div>
             </div>
 
@@ -606,12 +600,9 @@
       <span class="text-xs font-bold text-slate-200">선택됨</span>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="downloadSelectedDeliveryExcel('xlsx')" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-1.5" title="카톤 단위로 행이 자동 분할되어 1행=1송장으로 출력됩니다 (보안 차단 없는 표준 엑셀)">
+      <button onclick="downloadSelectedDeliveryExcel('xlsx')" class="toss-btn bg-[#3182f6] hover:bg-blue-600 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-1.5" title="카톤 단위로 행이 자동 분할되어 1행=1송장으로 출력됩니다">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        <span>택배 엑셀 다운로드 (.xlsx)</span>
-      </button>
-      <button onclick="downloadSelectedDeliveryExcel('xls')" class="toss-btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold px-3 py-2.5 rounded-xl shadow-xs flex items-center gap-1" title="구형 택배 프로그램 전용 .xls 형식">
-        <span>구버전 .xls</span>
+        <span>택배 엑셀 다운로드</span>
       </button>
       <button onclick="clearAllSelections()" class="p-2 text-slate-400 hover:text-white rounded-lg" title="선택 해제">✕</button>
     </div>
@@ -787,6 +778,71 @@
       </div>
     </div>
 
+    <!-- 🧾 세금계산서 발행 정보 (홈택스 입력용 원클릭 직접 복사 바) -->
+    <div class="bg-blue-50/60 p-3.5 rounded-2xl border border-blue-200/80 space-y-2 text-xs">
+      <div class="flex items-center justify-between border-b border-blue-200/70 pb-1.5">
+        <span class="font-bold text-blue-900 text-[11px] flex items-center gap-1">
+          <span>🧾 세금계산서 발행 정보</span>
+          <span class="text-[10px] text-blue-600 font-normal">(홈택스 전용)</span>
+        </span>
+        <span class="text-[10px] text-blue-600 font-medium">항목 클릭시 즉시복사</span>
+      </div>
+      <div class="grid grid-cols-2 gap-1.5">
+        <div onclick="copyDrawerTaxField('biznum')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 사업자번호 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-12 shrink-0">사업자번호</span>
+          <span id="drawer-tax-biznum-val" class="font-mono font-bold text-slate-900 text-[11px] truncate flex-1"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('clientname')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 상호명 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">상호</span>
+          <span id="drawer-tax-name-val" class="font-bold text-slate-900 text-[11px] truncate flex-1"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('ceoname')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-200/80 cursor-pointer transition active:scale-98" title="클릭시 대표자 성명 복사">
+          <span class="text-[10px] text-blue-700 font-bold w-12 shrink-0">대표자명</span>
+          <span id="drawer-tax-ceo-val" class="font-black text-blue-900 text-[11px] truncate flex-1"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('email')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 계산서 이메일 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">이메일</span>
+          <span id="drawer-tax-email-val" class="font-medium text-slate-800 text-[11px] truncate flex-1"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('supply')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 공급가액 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-12 shrink-0">공급가액</span>
+          <span id="drawer-tax-supply-val" class="font-mono font-bold text-slate-900 text-[11px] flex-1 text-right"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('vat')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 세액 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">세액</span>
+          <span id="drawer-tax-vat-val" class="font-mono font-bold text-slate-900 text-[11px] flex-1 text-right"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('total')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 합계금액 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-12 shrink-0">합계금액</span>
+          <span id="drawer-tax-total-val" class="font-mono font-black text-[#3182f6] text-[11px] flex-1 text-right"></span>
+        </div>
+        <div onclick="copyDrawerTaxField('itemsummary')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 대표 품목명 복사">
+          <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">품목명</span>
+          <span id="drawer-tax-item-val" class="font-medium text-slate-800 text-[10px] truncate flex-1"></span>
+        </div>
+      </div>
+      <!-- 품목별 공급가액/세액 상세 보기 토글 (거래처 요청 시) -->
+      <div class="pt-1.5 border-t border-blue-200/60">
+        <button type="button" onclick="toggleDrawerItemTaxTable()" class="text-[10px] text-blue-700 hover:text-blue-900 font-bold flex items-center gap-1">
+          <span id="drawer-item-tax-toggle-icon">▶</span>
+          <span>품목별 공급가액 · 세액 상세 보기 (거래처가 품목별 발행 요청 시)</span>
+        </button>
+        <div id="drawer-item-tax-table-box" class="hidden mt-1.5 bg-white rounded-xl border border-blue-100 overflow-hidden text-[10px]">
+          <table class="w-full text-left">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+              <tr>
+                <th class="p-1.5">품목</th>
+                <th class="p-1.5 text-center">수량</th>
+                <th class="p-1.5 text-right">공급가액</th>
+                <th class="p-1.5 text-right">세액</th>
+              </tr>
+            </thead>
+            <tbody id="drawer-item-tax-tbody" class="divide-y divide-slate-100 font-mono"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/60 space-y-2.5 text-xs">
       <div class="flex items-center justify-between">
         <span class="font-semibold text-slate-500">입금 여부</span>
@@ -914,27 +970,67 @@
             </select>
           </div>
         </div>
-        <div>
-          <label class="font-semibold text-slate-500 block mb-0.5">사업자번호</label>
-          <input type="text" id="edit-client-biznum" oninput="formatBizNumInput(this)" placeholder="000-00-00000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono">
-        </div>
-        <div>
-          <label class="font-semibold text-slate-500 block mb-0.5">계산서 이메일</label>
-          <input type="email" id="edit-client-email" placeholder="tax@example.com" class="w-full p-2 border border-slate-200 rounded-xl outline-none">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="font-semibold text-slate-500 block mb-0.5">수령인/대표자</label>
-            <input type="text" id="edit-client-receiver-name" class="w-full p-2 border border-slate-200 rounded-xl outline-none">
+        <!-- 1. 세무/계산서 정보 (법적 필수) -->
+        <div class="p-2.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-2">
+          <div class="text-[11px] font-black text-blue-900 flex items-center gap-1">
+            <span>🧾 세무 / 세금계산서 필수 정보</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-semibold text-slate-600 block mb-0.5">사업자번호</label>
+              <input type="text" id="edit-client-biznum" oninput="formatBizNumInput(this)" placeholder="000-00-00000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono text-xs bg-white">
+            </div>
+            <div>
+              <label class="font-bold text-blue-800 block mb-0.5">대표자 성명 (필수)</label>
+              <input type="text" id="edit-client-ceo-name" placeholder="사업자등록증상 대표자명" class="w-full p-2 border border-blue-300 rounded-xl outline-none font-bold text-xs bg-white text-blue-950">
+            </div>
           </div>
           <div>
-            <label class="font-semibold text-slate-500 block mb-0.5">연락처</label>
-            <input type="text" id="edit-client-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono">
+            <label class="font-semibold text-slate-600 block mb-0.5">계산서 이메일</label>
+            <input type="email" id="edit-client-email" placeholder="tax@example.com" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-600 block mb-0.5">기본 사업장 주소</label>
+            <input type="text" id="edit-client-address" placeholder="사업자등록증 주소" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
           </div>
         </div>
-        <div>
-          <label class="font-semibold text-slate-500 block mb-0.5">기본 사업장 주소</label>
-          <input type="text" id="edit-client-address" class="w-full p-2 border border-slate-200 rounded-xl outline-none">
+
+        <!-- 2. 본사 핵심 소통 / 영업 담당자 (MD, 대표 등) -->
+        <div class="p-2.5 bg-amber-50/50 rounded-xl border border-amber-200 space-y-2">
+          <div class="text-[11px] font-black text-amber-900 flex items-center gap-1">
+            <span>👑 본사 핵심 소통 담당자 (영업/MD/대표)</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-semibold text-slate-600 block mb-0.5">담당자명 및 직책</label>
+              <input type="text" id="edit-client-contact-name" placeholder="예: 김MD 과장, 홍길동 대표" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
+            </div>
+            <div>
+              <label class="font-semibold text-slate-600 block mb-0.5">소통 연락처</label>
+              <input type="text" id="edit-client-contact-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono text-xs bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 기본 배송지 / 물류 수령인 (현장) -->
+        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <div class="text-[11px] font-black text-slate-800 flex items-center gap-1">
+            <span>📦 기본 배송지 / 물류 수령인 (현장 출고)</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-semibold text-slate-600 block mb-0.5">기본 수령인</label>
+              <input type="text" id="edit-client-receiver-name" placeholder="예: 물류센터 입고담당" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
+            </div>
+            <div>
+              <label class="font-semibold text-slate-600 block mb-0.5">수령인 연락처</label>
+              <input type="text" id="edit-client-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono text-xs bg-white">
+            </div>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-600 block mb-0.5">기본 배송지 주소</label>
+            <input type="text" id="edit-client-receiver-address" placeholder="기본 납품처 배송 주소" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
+          </div>
         </div>
         <div id="edit-client-vendor-parent-wrap" class="hidden">
           <label class="font-semibold text-indigo-600 block mb-0.5">소속 벤더사 (벤더 납품처인 경우)</label>
@@ -1249,6 +1345,80 @@
       if (type === 'name') copySingleFieldInline(order.receiverName || order.clientName, '받는분 성함');
       if (type === 'phone') copySingleFieldInline(order.receiverPhone, '수령자 연락처');
       if (type === 'address') copySingleFieldInline(order.receiverAddress, '배송지 주소');
+    }
+
+    // 🧾 세금계산서 홈택스 입력용 원클릭 직접 복사 (박스 클릭 시 바로 복사)
+    function copyDrawerTaxField(field) {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+      const matchedClient = clients.find(c => c.name.toLowerCase() === (order.clientName || '').toLowerCase());
+
+      if (field === 'biznum') {
+        const raw = order.bizNum || (matchedClient ? matchedClient.bizNum : '') || '';
+        const digits = raw.replace(/[^0-9]/g, '');
+        copySingleFieldInline(digits || raw, '사업자번호');
+      } else if (field === 'clientname') {
+        copySingleFieldInline(order.clientName || '', '상호');
+      } else if (field === 'ceoname') {
+        const ceo = order.ceoName || (matchedClient ? (matchedClient.ceoName || matchedClient.name) : '') || '';
+        copySingleFieldInline(ceo, '대표자명');
+      } else if (field === 'email') {
+        const email = order.clientEmail || (matchedClient ? (matchedClient.email || matchedClient.clientEmail) : '') || '';
+        copySingleFieldInline(email, '계산서 이메일');
+      } else if (field === 'supply') {
+        copySingleFieldInline(String(order.supplyPrice || 0), '공급가액');
+      } else if (field === 'vat') {
+        copySingleFieldInline(String(order.vat || 0), '세액');
+      } else if (field === 'total') {
+        copySingleFieldInline(String(order.totalPrice || 0), '합계금액');
+      } else if (field === 'itemsummary') {
+        const items = order.items && order.items.length > 0 ? order.items : [];
+        let rep = order.itemsSummary || '기본 상품';
+        if (items.length > 1) {
+          rep = `${items[0].name} 외 ${items.length - 1}건`;
+        } else if (items.length === 1) {
+          rep = items[0].name;
+        }
+        copySingleFieldInline(rep, '대표품목명');
+      }
+    }
+
+    function toggleDrawerItemTaxTable() {
+      const box = document.getElementById('drawer-item-tax-table-box');
+      const icon = document.getElementById('drawer-item-tax-toggle-icon');
+      if (!box || !icon) return;
+      if (box.classList.contains('hidden')) {
+        box.classList.remove('hidden');
+        icon.textContent = '▼';
+      } else {
+        box.classList.add('hidden');
+        icon.textContent = '▶';
+      }
+    }
+
+    function renderDrawerItemTaxTable(order, items) {
+      const tbody = document.getElementById('drawer-item-tax-tbody');
+      if (!tbody) return;
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-2 text-center text-slate-400">품목 내역이 없습니다.</td></tr>';
+        return;
+      }
+      const isTaxExempt = Boolean(order.isTaxExempt);
+      tbody.innerHTML = items.map(it => {
+        const qty = Number(it.qty) || 1;
+        const price = Number(it.price) || 0;
+        const total = qty * price;
+        const supply = isTaxExempt ? total : Math.round(total / 1.1);
+        const vat = isTaxExempt ? 0 : (total - supply);
+        return `
+          <tr class="hover:bg-blue-50/50">
+            <td class="p-1.5 font-bold text-slate-800">${it.name}</td>
+            <td class="p-1.5 text-center text-slate-600">${qty}</td>
+            <td class="p-1.5 text-right font-mono text-slate-900 cursor-pointer hover:text-blue-600 font-bold" onclick="copySingleFieldInline('${supply}', '공급가액')" title="클릭시 공급가액 숫자만 복사">${supply.toLocaleString()}원</td>
+            <td class="p-1.5 text-right font-mono text-slate-600 cursor-pointer hover:text-blue-600" onclick="copySingleFieldInline('${vat}', '세액')" title="클릭시 세액 숫자만 복사">${vat.toLocaleString()}원</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function swapClientAndReceiver() {
@@ -2607,7 +2777,9 @@
       activeClientObj = client;
       document.getElementById('order-client-name').value = client.name;
       document.getElementById('order-biz-num').value = client.bizNum || '';
-      document.getElementById('order-client-email').value = client.email || '';
+      document.getElementById('order-client-email').value = client.email || client.clientEmail || '';
+      const ceoInput = document.getElementById('order-ceo-name');
+      if (ceoInput) ceoInput.value = client.ceoName || '';
       if (!document.getElementById('order-receiver-name').value) document.getElementById('order-receiver-name').value = client.receiverName || client.name;
       if (!document.getElementById('order-receiver-phone').value) document.getElementById('order-receiver-phone').value = client.receiverPhone || '';
       if (!document.getElementById('order-receiver-address').value) document.getElementById('order-receiver-address').value = client.receiverAddress || '';
@@ -2880,6 +3052,7 @@
       const receiverPhone = document.getElementById('order-receiver-phone').value.trim();
       const receiverAddress = document.getElementById('order-receiver-address').value.trim();
       const bizNum = document.getElementById('order-biz-num').value.trim();
+      const ceoName = (document.getElementById('order-ceo-name')?.value || '').trim();
       const clientEmail = document.getElementById('order-client-email').value.trim();
       const memo = document.getElementById('order-memo').value.trim();
       const internalMemo = (document.getElementById('order-internal-memo')?.value || '').trim();
@@ -2942,6 +3115,7 @@
         id: orderId,
         date: dateStr,
         clientName,
+        ceoName,
         bizNum,
         email: clientEmail,
         isTaxExempt: isTaxExemptOrder,
@@ -2982,6 +3156,7 @@
           name: clientName,
           clientType: currentClientType,
           bizNum: bizNum,
+          ceoName: ceoName,
           email: clientEmail,
           isTaxExempt: isTaxExemptOrder,
           receiverName: receiverName,
@@ -2993,6 +3168,7 @@
       } else {
         client.clientType = currentClientType;
         if (bizNum) client.bizNum = bizNum;
+        if (ceoName) client.ceoName = ceoName;
         if (clientEmail) client.email = clientEmail;
         if (receiverPhone) client.receiverPhone = receiverPhone;
         if (receiverAddress) client.receiverAddress = receiverAddress;
@@ -3045,6 +3221,8 @@
       document.getElementById('raw-order-text').value = '';
       document.getElementById('order-client-name').value = '';
       document.getElementById('order-biz-num').value = '';
+      const ceoInp = document.getElementById('order-ceo-name');
+      if (ceoInp) ceoInp.value = '';
       document.getElementById('order-client-email').value = '';
       document.getElementById('order-receiver-name').value = '';
       document.getElementById('order-receiver-phone').value = '';
@@ -3196,16 +3374,13 @@
       }
     }
 
+    // 포장 박스 계산 알고리즘 (사장님 확정 기준):
+    // 1. 수입산 350세트(10입 상호혼합), 국산 180세트(8입 단독) 격리
+    // 2. 단품 완박스 우선 추출 (생강청 20, 육수 20, 기름류 24)
+    // 3. 자투리는 최소 필요 박스 수를 유지하며, 작업자 편의를 위해 단독 박스 우선 배정 후 잔여 24입 합포장
+    // 4. 상품명 구분자는 콤마(, )로 한 줄 표기
     function packOrderIntoCartonBoxes(order) {
       const items = ensureOrderItemsArray(order);
-      const groupsConfig = {
-        '기름단품': 24,
-        '350세트': 10,
-        '국산세트': 8,
-        '생강청': 20,
-        '육수한알': 20
-      };
-
       if (!items || items.length === 0) {
         return [{
           productName: order.itemsSummary || '기본 상품',
@@ -3213,51 +3388,153 @@
         }];
       }
 
-      // 품목 그룹별 묶기
-      const byGroup = {};
+      const set350Items = [];
+      const setKuksanItems = [];
+      const generalItems = [];
+
       items.forEach(it => {
-        let grp = it.group;
-        if (!grp || !groupsConfig[grp]) {
-          const mp = MASTER_PRODUCTS.find(p => p.id === it.id || p.name === it.name);
-          grp = (mp && mp.group && groupsConfig[mp.group]) ? mp.group : '기름단품';
+        const qty = Number(it.qty) || 0;
+        if (qty <= 0) return;
+        const mp = MASTER_PRODUCTS.find(p => p.id === it.id || p.name === it.name);
+        const grp = (mp && mp.group) ? mp.group : (it.group || '기름단품');
+
+        if (grp === '350세트' || (it.name && it.name.includes('선물세트 350'))) {
+          set350Items.push({ name: it.name, qty: qty });
+        } else if (grp === '국산세트' || (it.name && it.name.includes('국산 참들 선물세트'))) {
+          setKuksanItems.push({ name: it.name, qty: qty });
+        } else {
+          let limit = 24;
+          if (grp === '생강청' || (it.name && it.name.includes('생강청'))) limit = 20;
+          else if (grp === '육수한알' || (it.name && it.name.includes('육수'))) limit = 20;
+          generalItems.push({ name: it.name, qty: qty, limit: limit, group: grp });
         }
-        if (!byGroup[grp]) byGroup[grp] = [];
-        byGroup[grp].push({ name: it.name, qty: Number(it.qty) || 0 });
       });
 
       const rawBoxes = [];
-      Object.keys(byGroup).forEach(grp => {
-        const limit = groupsConfig[grp] || 24;
-        const gitems = byGroup[grp];
-        let curBoxItems = [];
-        let curBoxQty = 0;
 
-        gitems.forEach(it => {
+      // 1. 수입산 350 선물세트 (10입 상호 혼합 완박스)
+      if (set350Items.length > 0) {
+        let curBox = [];
+        let curQty = 0;
+        set350Items.forEach(it => {
           let rem = it.qty;
           while (rem > 0) {
-            const space = limit - curBoxQty;
+            const space = 10 - curQty;
             const take = Math.min(rem, space);
-            const exist = curBoxItems.find(x => x.name === it.name);
-            if (exist) {
-              exist.qty += take;
-            } else {
-              curBoxItems.push({ name: it.name, qty: take });
-            }
-            curBoxQty += take;
+            curBox.push({ name: it.name, qty: take });
+            curQty += take;
             rem -= take;
-
-            if (curBoxQty >= limit) {
-              rawBoxes.push({ items: curBoxItems, totalQty: curBoxQty });
-              curBoxItems = [];
-              curBoxQty = 0;
+            if (curQty >= 10) {
+              rawBoxes.push({ items: curBox, totalQty: curQty });
+              curBox = [];
+              curQty = 0;
             }
           }
         });
-
-        if (curBoxQty > 0) {
-          rawBoxes.push({ items: curBoxItems, totalQty: curBoxQty });
+        if (curQty > 0) {
+          rawBoxes.push({ items: curBox, totalQty: curQty });
         }
-      });
+      }
+
+      // 2. 국산 180 선물세트 (8입 단독 완박스)
+      if (setKuksanItems.length > 0) {
+        let curBox = [];
+        let curQty = 0;
+        setKuksanItems.forEach(it => {
+          let rem = it.qty;
+          while (rem > 0) {
+            const space = 8 - curQty;
+            const take = Math.min(rem, space);
+            curBox.push({ name: it.name, qty: take });
+            curQty += take;
+            rem -= take;
+            if (curQty >= 8) {
+              rawBoxes.push({ items: curBox, totalQty: curQty });
+              curBox = [];
+              curQty = 0;
+            }
+          }
+        });
+        if (curQty > 0) {
+          rawBoxes.push({ items: curBox, totalQty: curQty });
+        }
+      }
+
+      // 3. 일반 단품류 (생강청, 육수, 기름류)
+      if (generalItems.length > 0) {
+        // 3-1. 완박스 우선 추출
+        const remItems = [];
+        generalItems.forEach(it => {
+          const fullCount = Math.floor(it.qty / it.limit);
+          const rem = it.qty % it.limit;
+          for (let i = 0; i < fullCount; i++) {
+            rawBoxes.push({
+              items: [{ name: it.name, qty: it.limit }],
+              totalQty: it.limit
+            });
+          }
+          if (rem > 0) {
+            remItems.push({ name: it.name, qty: rem, limit: it.limit, group: it.group });
+          }
+        });
+
+        // 3-2. 자투리 포장: 작업자 편의 중심 (단독 우선 & 최소 박스 수 유지)
+        if (remItems.length > 0) {
+          const totalRemQty = remItems.reduce((acc, c) => acc + c.qty, 0);
+          if (totalRemQty <= 24) {
+            rawBoxes.push({
+              items: remItems.map(x => ({ name: x.name, qty: x.qty })),
+              totalQty: totalRemQty
+            });
+          } else {
+            // 수량 내림차순 정렬
+            remItems.sort((a, b) => b.qty - a.qty);
+            const currentPool = remItems.map(x => ({ ...x }));
+
+            while (currentPool.length > 0) {
+              const curTotal = currentPool.reduce((acc, c) => acc + c.qty, 0);
+              if (curTotal <= 24) {
+                rawBoxes.push({
+                  items: currentPool.map(x => ({ name: x.name, qty: x.qty })),
+                  totalQty: curTotal
+                });
+                break;
+              }
+
+              const curMinBoxes = Math.ceil(curTotal / 24);
+              const top = currentPool[0];
+              const remAfterTop = curTotal - top.qty;
+              const boxesNeededForRem = Math.ceil(remAfterTop / 24);
+
+              // 1박스를 top 품목 단독으로 채워도 최소 박스 수를 유지할 수 있다면 단독 박스 분리!
+              if (top.qty <= top.limit && (boxesNeededForRem + 1 <= curMinBoxes)) {
+                rawBoxes.push({
+                  items: [{ name: top.name, qty: top.qty }],
+                  totalQty: top.qty
+                });
+                currentPool.shift();
+              } else {
+                // 혼합하여 24개 채우기
+                let boxItems = [];
+                let boxQty = 0;
+                const limit = 24;
+                while (boxQty < limit && currentPool.length > 0) {
+                  const space = limit - boxQty;
+                  const it = currentPool[0];
+                  const take = Math.min(it.qty, space);
+                  boxItems.push({ name: it.name, qty: take });
+                  boxQty += take;
+                  it.qty -= take;
+                  if (it.qty <= 0) {
+                    currentPool.shift();
+                  }
+                }
+                rawBoxes.push({ items: boxItems, totalQty: boxQty });
+              }
+            }
+          }
+        }
+      }
 
       if (rawBoxes.length === 0) {
         rawBoxes.push({
@@ -3266,8 +3543,9 @@
         });
       }
 
+      // 상품명 연결은 쉼표(, )로 한 줄 표기
       return rawBoxes.map(b => {
-        const itemsDesc = b.items.map(it => `${it.name} ${it.qty}개`).join(' + ');
+        const itemsDesc = b.items.map(it => `${it.name} ${it.qty}개`).join(', ');
         return {
           productName: itemsDesc,
           qty: 1
@@ -4165,6 +4443,46 @@
       if (copyPhoneEl) copyPhoneEl.textContent = order.receiverPhone || '미등록';
       if (copyAddrEl) copyAddrEl.textContent = order.receiverAddress || '미등록';
 
+      // 🧾 세금계산서 발행 정보 (홈택스 입력용) 자동 채우기
+      const matchedClient = clients.find(c => c.name.toLowerCase() === (order.clientName || '').toLowerCase());
+      const bizVal = order.bizNum || (matchedClient ? matchedClient.bizNum : '') || '미등록';
+      const nameVal = order.clientName || '미등록';
+      const ceoVal = order.ceoName || (matchedClient ? (matchedClient.ceoName || matchedClient.name) : '') || '미등록';
+      const emailVal = order.clientEmail || (matchedClient ? (matchedClient.email || matchedClient.clientEmail) : '') || '미등록';
+      const supplyVal = `${Number(order.supplyPrice || 0).toLocaleString()}원`;
+      const vatVal = `${Number(order.vat || 0).toLocaleString()}원`;
+      const totalVal = `${Number(order.totalPrice || 0).toLocaleString()}원`;
+
+      const orderItemsList = order.items && order.items.length > 0 ? order.items : ensureOrderItemsArray(order);
+      let repItemStr = order.itemsSummary || '품목';
+      if (orderItemsList && orderItemsList.length > 0) {
+        if (orderItemsList.length === 1) {
+          repItemStr = orderItemsList[0].name;
+        } else {
+          repItemStr = `${orderItemsList[0].name} 외 ${orderItemsList.length - 1}건`;
+        }
+      }
+
+      const elBiz = document.getElementById('drawer-tax-biznum-val');
+      const elName = document.getElementById('drawer-tax-name-val');
+      const elCeo = document.getElementById('drawer-tax-ceo-val');
+      const elEmail = document.getElementById('drawer-tax-email-val');
+      const elSupply = document.getElementById('drawer-tax-supply-val');
+      const elVat = document.getElementById('drawer-tax-vat-val');
+      const elTotal = document.getElementById('drawer-tax-total-val');
+      const elItem = document.getElementById('drawer-tax-item-val');
+
+      if (elBiz) elBiz.textContent = bizVal;
+      if (elName) elName.textContent = nameVal;
+      if (elCeo) elCeo.textContent = ceoVal;
+      if (elEmail) elEmail.textContent = emailVal;
+      if (elSupply) elSupply.textContent = supplyVal;
+      if (elVat) elVat.textContent = vatVal;
+      if (elTotal) elTotal.textContent = totalVal;
+      if (elItem) elItem.textContent = repItemStr;
+
+      renderDrawerItemTaxTable(order, orderItemsList);
+
       const payBtn = document.getElementById('drawer-toggle-payment-btn');
       if (order.paymentStatus === 'paid') {
         payBtn.textContent = '● 입금완료';
@@ -5026,11 +5344,19 @@
         toggleEditClientVendorField(c.clientType || '직거래');
         document.getElementById('edit-client-vendor-name').value = c.vendorName || (entity ? entity.vendorName : '') || '';
         document.getElementById('edit-client-biznum').value = c.bizNum || '';
+        const ceoModalInp = document.getElementById('edit-client-ceo-name');
+        if (ceoModalInp) ceoModalInp.value = c.ceoName || (entity ? entity.ceoName : '') || '';
         document.getElementById('edit-client-email').value = c.email || '';
         document.getElementById('edit-client-tax-exempt').value = c.isTaxExempt ? "true" : "false";
+        const contactNameInp = document.getElementById('edit-client-contact-name');
+        const contactPhoneInp = document.getElementById('edit-client-contact-phone');
+        if (contactNameInp) contactNameInp.value = c.contactName || (entity ? entity.contactName : '') || '';
+        if (contactPhoneInp) contactPhoneInp.value = c.contactPhone || (entity ? entity.contactPhone : '') || '';
         document.getElementById('edit-client-receiver-name').value = c.receiverName || c.name || '';
         document.getElementById('edit-client-phone').value = c.receiverPhone || '';
-        document.getElementById('edit-client-address').value = c.receiverAddress || '';
+        const recAddrInp = document.getElementById('edit-client-receiver-address');
+        if (recAddrInp) recAddrInp.value = c.receiverAddress || (entity ? entity.receiverAddress : '') || '';
+        document.getElementById('edit-client-address').value = c.address || c.receiverAddress || (entity ? entity.address : '') || '';
         
         let safeMemo = c.memo || '';
         if (safeMemo.startsWith('{') && safeMemo.includes('}')) safeMemo = '';
@@ -5053,8 +5379,16 @@
         document.getElementById('edit-client-biznum').value = "";
         document.getElementById('edit-client-email').value = "";
         document.getElementById('edit-client-tax-exempt').value = "false";
+        const ceoModalInp2 = document.getElementById('edit-client-ceo-name');
+        if (ceoModalInp2) ceoModalInp2.value = "";
+        const contactNameInp2 = document.getElementById('edit-client-contact-name');
+        const contactPhoneInp2 = document.getElementById('edit-client-contact-phone');
+        if (contactNameInp2) contactNameInp2.value = "";
+        if (contactPhoneInp2) contactPhoneInp2.value = "";
         document.getElementById('edit-client-receiver-name').value = "";
         document.getElementById('edit-client-phone').value = "";
+        const recAddrInp2 = document.getElementById('edit-client-receiver-address');
+        if (recAddrInp2) recAddrInp2.value = "";
         document.getElementById('edit-client-address').value = "";
         document.getElementById('edit-client-memo').value = "";
         if (historySection) historySection.classList.add('hidden');
@@ -5092,6 +5426,8 @@
 
         const repMatch = text.match(/(?:대\s*표\s*자|성\s*명)[\s:>]+([가-힣]{2,4})/);
         if (repMatch && repMatch[1]) {
+          const ceoEl = document.getElementById('edit-client-ceo-name');
+          if (ceoEl) ceoEl.value = repMatch[1].trim();
           document.getElementById('edit-client-receiver-name').value = repMatch[1].trim();
         }
 
@@ -5109,11 +5445,15 @@
       const clientType = document.getElementById('edit-client-type').value;
       const vendorName = (document.getElementById('edit-client-vendor-name')?.value || '').trim();
       const bizNum = document.getElementById('edit-client-biznum').value.trim();
+      const ceoName = (document.getElementById('edit-client-ceo-name')?.value || '').trim();
       const email = document.getElementById('edit-client-email').value.trim();
       const isTaxExempt = document.getElementById('edit-client-tax-exempt').value === "true";
+      const contactName = (document.getElementById('edit-client-contact-name')?.value || '').trim();
+      const contactPhone = (document.getElementById('edit-client-contact-phone')?.value || '').trim();
       const receiverName = document.getElementById('edit-client-receiver-name').value.trim();
       const receiverPhone = document.getElementById('edit-client-phone').value.trim();
-      const receiverAddress = document.getElementById('edit-client-address').value.trim();
+      const receiverAddress = (document.getElementById('edit-client-receiver-address')?.value || '').trim();
+      const bizAddress = document.getElementById('edit-client-address').value.trim();
       const memo = document.getElementById('edit-client-memo').value.trim();
 
       if (!name) return alert("상호명을 입력해주세요.");
@@ -5124,11 +5464,15 @@
         targetClient.clientType = clientType;
         targetClient.vendorName = clientType === '벤더 납품처' ? vendorName : '';
         targetClient.bizNum = bizNum;
+        targetClient.ceoName = ceoName;
         targetClient.email = email;
         targetClient.isTaxExempt = isTaxExempt;
+        targetClient.contactName = contactName;
+        targetClient.contactPhone = contactPhone;
         targetClient.receiverName = receiverName;
         targetClient.receiverPhone = receiverPhone;
-        targetClient.receiverAddress = receiverAddress;
+        targetClient.receiverAddress = receiverAddress || bizAddress;
+        targetClient.address = bizAddress;
         targetClient.memo = memo;
       } else {
         targetClient = {
@@ -5137,11 +5481,15 @@
           clientType: clientType,
           vendorName: clientType === '벤더 납품처' ? vendorName : '',
           bizNum: bizNum,
+          ceoName: ceoName,
           email: email,
           isTaxExempt: isTaxExempt,
+          contactName: contactName,
+          contactPhone: contactPhone,
           receiverName: receiverName,
           receiverPhone: receiverPhone,
-          receiverAddress: receiverAddress,
+          receiverAddress: receiverAddress || bizAddress,
+          address: bizAddress,
           memo: memo
         };
         clients.push(targetClient);
@@ -5425,11 +5773,13 @@
       const rows = [];
 
       validOrders.forEach(o => {
+        const client = clients.find(c => c.name.toLowerCase() === (o.clientName || '').toLowerCase());
+        const ceoName = o.ceoName || (client ? client.ceoName : '') || o.receiverName || o.clientName;
         rows.push({
-          "공급받는자 사업자등록번호": o.bizNum || "",
+          "공급받는자 사업자등록번호": o.bizNum || (client ? client.bizNum : '') || "",
           "공급받는자 상호": o.clientName,
-          "공급받는자 성명": o.receiverName,
-          "공급받는자 이메일": o.email || "",
+          "공급받는자 성명": ceoName,
+          "공급받는자 이메일": o.clientEmail || (client ? (client.email || client.clientEmail) : '') || "",
           "작성일자": o.date ? o.date.slice(0, 10).replace(/-/g, '') : '',
           "공급가액": o.supplyPrice || 0,
           "세액": o.vat || 0,
