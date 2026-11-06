@@ -166,6 +166,7 @@
                 <input type="text" id="order-client-name" oninput="handleClientSearch(this.value); calculateNewOrderTotals();" placeholder="상호명 입력 또는 검색" class="w-full text-xs md:text-sm p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#3182f6] outline-none font-bold">
                 <div id="client-autocomplete" class="hidden absolute top-14 left-0 w-full sm:w-80 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto"></div>
                 <!-- 세무 정보는 거래처 선택 시 자동 연동되며 화면에는 미표시 (거래처/이력 탭에서 관리) -->
+                <input type="hidden" id="order-tax-client-name">
                 <input type="hidden" id="order-biz-num">
                 <input type="hidden" id="order-ceo-name">
                 <input type="hidden" id="order-client-email">
@@ -744,11 +745,16 @@
   <div id="drawer-backdrop" onclick="closeOrderDrawer()" class="fixed inset-0 bg-black/30 z-40 hidden transition-opacity"></div>
   <aside id="order-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-white z-50 shadow-2xl p-4 md:p-6 overflow-y-auto drawer-closed transition-transform duration-300 ease-in-out space-y-4">
     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-      <div>
+      <div class="min-w-0 flex-1 pr-2">
         <span id="drawer-order-id" class="text-xs text-slate-400 font-mono">ORD-0000</span>
-        <h2 id="drawer-client-title" class="text-base font-extrabold text-[#191f28]">거래처 상세</h2>
+        <div class="flex items-center gap-2 flex-wrap mt-0.5">
+          <h2 id="drawer-client-title" class="text-base font-extrabold text-[#191f28] truncate">거래처 상세</h2>
+          <button type="button" onclick="openClientEditFromDrawer()" class="toss-btn text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-[#3182f6] font-bold px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1 shrink-0" title="탭 이동 없이 이 거래처의 전체 정보 및 사업자등록증 OCR 팝업 열기">
+            <span>거래처 정보 수정 ✏️</span>
+          </button>
+        </div>
       </div>
-      <button onclick="closeOrderDrawer()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg text-lg">✕</button>
+      <button onclick="closeOrderDrawer()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg text-lg shrink-0">✕</button>
     </div>
 
     <!-- 택배 발송용 받는분/연락처/주소 (텍스트 클릭 시 즉시 자동 복사 + 수정 지원) -->
@@ -778,30 +784,39 @@
       </div>
     </div>
 
-    <!-- 🧾 세금계산서 발행 정보 (홈택스 입력용 원클릭 직접 복사 바) -->
+    <!-- 🧾 세금계산서 발행 정보 (홈택스 입력용 원클릭 직접 복사 바 + 인라인 수기 수정 지원) -->
     <div class="bg-blue-50/60 p-3.5 rounded-2xl border border-blue-200/80 space-y-2 text-xs">
-      <div class="flex items-center justify-between border-b border-blue-200/70 pb-1.5">
+      <div class="flex items-center justify-between border-b border-blue-200/70 pb-1.5 flex-wrap gap-1">
         <span class="font-bold text-blue-900 text-[11px] flex items-center gap-1">
           <span>🧾 세금계산서 발행 정보</span>
-          <span class="text-[10px] text-blue-600 font-normal">(홈택스 전용)</span>
+          <span class="text-[10px] text-blue-600 font-normal">(클릭시 복사)</span>
         </span>
-        <span class="text-[10px] text-blue-600 font-medium">항목 클릭시 즉시복사</span>
+        <div class="flex items-center gap-1">
+          <button type="button" id="btn-drawer-tax-inline-edit" onclick="toggleDrawerTaxEditMode(true)" class="toss-btn text-[11px] bg-white text-[#3182f6] hover:bg-blue-100 font-extrabold px-2 py-0.5 rounded-lg border border-blue-200 shadow-2xs flex items-center gap-0.5" title="카톡 사업자등록증을 보면서 이 자리에서 바로 타이핑하여 수정/등록합니다">
+            <span>세무정보 직접수정 ✏️</span>
+          </button>
+          <button type="button" onclick="openClientEditFromDrawer()" class="toss-btn text-[10px] bg-blue-100/70 text-blue-800 hover:bg-blue-200/70 font-bold px-2 py-0.5 rounded-lg" title="사업자등록증 사진 OCR 스캔 및 전체 거래처 팝업 열기">
+            <span>OCR/상세</span>
+          </button>
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-1.5">
+
+      <!-- [뷰 모드] 클릭 시 즉시 복사 -->
+      <div id="drawer-tax-view-mode" class="grid grid-cols-2 gap-1.5">
         <div onclick="copyDrawerTaxField('biznum')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 사업자번호 복사">
           <span class="text-[10px] text-slate-400 font-semibold w-12 shrink-0">사업자번호</span>
           <span id="drawer-tax-biznum-val" class="font-mono font-bold text-slate-900 text-[11px] truncate flex-1"></span>
         </div>
-        <div onclick="copyDrawerTaxField('clientname')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 상호명 복사">
-          <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">상호</span>
-          <span id="drawer-tax-name-val" class="font-bold text-slate-900 text-[11px] truncate flex-1"></span>
+        <div onclick="copyDrawerTaxField('clientname')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 세금계산서용 공식 상호(법인명) 복사">
+          <span class="text-[10px] text-blue-700 font-bold w-11 shrink-0">세무상호</span>
+          <span id="drawer-tax-name-val" class="font-black text-slate-900 text-[11px] truncate flex-1"></span>
         </div>
         <div onclick="copyDrawerTaxField('ceoname')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-200/80 cursor-pointer transition active:scale-98" title="클릭시 대표자 성명 복사">
           <span class="text-[10px] text-blue-700 font-bold w-12 shrink-0">대표자명</span>
           <span id="drawer-tax-ceo-val" class="font-black text-blue-900 text-[11px] truncate flex-1"></span>
         </div>
         <div onclick="copyDrawerTaxField('email')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 계산서 이메일 복사">
-          <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">이메일</span>
+          <span class="text-[10px] text-slate-400 font-semibold w-11 shrink-0">이메일</span>
           <span id="drawer-tax-email-val" class="font-medium text-slate-800 text-[11px] truncate flex-1"></span>
         </div>
         <div onclick="copyDrawerTaxField('supply')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 공급가액 복사">
@@ -819,6 +834,40 @@
         <div onclick="copyDrawerTaxField('itemsummary')" class="flex items-center gap-1.5 bg-white hover:bg-blue-100/70 px-2.5 py-2 rounded-xl border border-blue-100 cursor-pointer transition active:scale-98" title="클릭시 대표 품목명 복사">
           <span class="text-[10px] text-slate-400 font-semibold w-8 shrink-0">품목명</span>
           <span id="drawer-tax-item-val" class="font-medium text-slate-800 text-[10px] truncate flex-1"></span>
+        </div>
+      </div>
+
+      <!-- [인라인 수기 수정 모드] 서랍에서 창 이동 없이 바로 타이핑하여 주문+거래처 동시 영구저장 -->
+      <div id="drawer-tax-edit-mode" class="hidden bg-white p-3 rounded-xl border border-blue-300 space-y-2 shadow-xs">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+          <span class="text-[11px] font-extrabold text-blue-900">✏️ 세무 정보 직접 수기 입력</span>
+          <span class="text-[10px] text-slate-400">저장 시 거래처 정보에도 영구 반영됩니다</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] font-bold text-slate-600 block mb-0.5">사업자등록번호</label>
+            <input type="text" id="drawer-inline-biznum" oninput="formatBizNumInput(this)" placeholder="000-00-00000" class="w-full p-1.5 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-blue-800 block mb-0.5">세무 상호/법인명 <span class="text-[9px] font-normal text-slate-400">(다를때)</span></label>
+            <input type="text" id="drawer-inline-taxname" placeholder="비워두면 발주처명 적용" class="w-full p-1.5 border border-blue-300 rounded-lg font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-blue-800 block mb-0.5">대표자 성명</label>
+            <input type="text" id="drawer-inline-ceoname" placeholder="대표자 성명" class="w-full p-1.5 border border-slate-300 rounded-lg font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-600 block mb-0.5">계산서 이메일</label>
+            <input type="email" id="drawer-inline-email" placeholder="tax@example.com" class="w-full p-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-600 block mb-0.5">사업장 소재지 주소 (선택)</label>
+          <input type="text" id="drawer-inline-bizaddr" placeholder="사업자등록증 상 주소" class="w-full p-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex justify-end gap-1.5 pt-1">
+          <button type="button" onclick="toggleDrawerTaxEditMode(false)" class="toss-btn text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-semibold">취소</button>
+          <button type="button" onclick="saveDrawerTaxInline()" class="toss-btn text-xs bg-[#3182f6] hover:bg-blue-600 text-white font-bold px-3.5 py-1.5 rounded-lg shadow-xs">저장 완료 ✓</button>
         </div>
       </div>
       <!-- 품목별 공급가액/세액 상세 보기 토글 (거래처 요청 시) -->
@@ -970,10 +1019,15 @@
             </select>
           </div>
         </div>
-        <!-- 1. 세무/계산서 정보 (법적 필수) -->
+        <!-- 1. 세무/계산서 정보 (상단 배치) -->
         <div class="p-2.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-2">
-          <div class="text-[11px] font-black text-blue-900 flex items-center gap-1">
-            <span>🧾 세무 / 세금계산서 필수 정보</span>
+          <div class="text-[11px] font-black text-blue-900 flex items-center justify-between">
+            <span>🧾 1. 세무 / 세금계산서 필수 정보</span>
+            <span class="text-[10px] font-normal text-blue-700">발주명과 사업자 상호가 다를 때 분리 가능</span>
+          </div>
+          <div>
+            <label class="font-bold text-blue-800 block mb-0.5">세금계산서 상호 / 법인명 <span class="text-[10px] font-normal text-slate-500">(발주 거래처명과 다를 경우만 입력, 비워두면 발주처명 적용)</span></label>
+            <input type="text" id="edit-client-tax-name" placeholder="예: 몽클리닉, 주식회사 포테이토 (비워두면 발주 거래처명과 동일)" class="w-full p-2 border border-blue-300 rounded-xl outline-none font-bold text-xs bg-white text-blue-950">
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -995,27 +1049,10 @@
           </div>
         </div>
 
-        <!-- 2. 본사 핵심 소통 / 영업 담당자 (MD, 대표 등) -->
-        <div class="p-2.5 bg-amber-50/50 rounded-xl border border-amber-200 space-y-2">
-          <div class="text-[11px] font-black text-amber-900 flex items-center gap-1">
-            <span>👑 본사 핵심 소통 담당자 (영업/MD/대표)</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="font-semibold text-slate-600 block mb-0.5">담당자명 및 직책</label>
-              <input type="text" id="edit-client-contact-name" placeholder="예: 김MD 과장, 홍길동 대표" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
-            </div>
-            <div>
-              <label class="font-semibold text-slate-600 block mb-0.5">소통 연락처</label>
-              <input type="text" id="edit-client-contact-phone" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="w-full p-2 border border-slate-200 rounded-xl outline-none font-mono text-xs bg-white">
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. 기본 배송지 / 물류 수령인 (현장) -->
+        <!-- 2. 기본 배송지 / 물류 수령인 (중간 전진 배치) -->
         <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
           <div class="text-[11px] font-black text-slate-800 flex items-center gap-1">
-            <span>📦 기본 배송지 / 물류 수령인 (현장 출고)</span>
+            <span>📦 2. 기본 배송지 / 물류 수령인 (현장 출고)</span>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -1031,6 +1068,23 @@
             <label class="font-semibold text-slate-600 block mb-0.5">기본 배송지 주소</label>
             <input type="text" id="edit-client-receiver-address" placeholder="기본 납품처 배송 주소" class="w-full p-2 border border-slate-200 rounded-xl outline-none text-xs bg-white">
           </div>
+        </div>
+
+        <!-- 3. 본사 소통 담당자 및 실무자 다중 목록 (하단 배치 + [+ 담당자 추가]) -->
+        <div class="p-2.5 bg-amber-50/50 rounded-xl border border-amber-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="text-[11px] font-black text-amber-900 flex items-center gap-1">
+              <span>👑 3. 본사 소통 담당자 및 실무자 목록 (다중 등록)</span>
+            </div>
+            <button type="button" onclick="addClientContactRow('', '', '')" class="toss-btn text-[11px] bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-2.5 py-1 rounded-lg shadow-2xs flex items-center gap-0.5">
+              <span>+ 담당자 추가</span>
+            </button>
+          </div>
+          <div class="text-[10px] text-amber-800/80">실무자가 여러 명이거나 대표, 총괄MD, 발주/정산 담당자를 원하는 만큼 추가하세요.</div>
+          <div id="edit-client-contacts-list" class="space-y-1.5"></div>
+          <!-- 레거시 단일 필드 호환용 hidden -->
+          <input type="hidden" id="edit-client-contact-name">
+          <input type="hidden" id="edit-client-contact-phone">
         </div>
         <div id="edit-client-vendor-parent-wrap" class="hidden">
           <label class="font-semibold text-indigo-600 block mb-0.5">소속 벤더사 (벤더 납품처인 경우)</label>
@@ -1176,7 +1230,6 @@
       </div>
     </div>
   </div>
-
   <script>
     const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbxqXlIJhc7VI6twzOA_6u-0PvZJ_0GDnQraUwo6XCTRARt--dd62iH6QOv0Kqdy8MY/exec";
 
@@ -1307,10 +1360,20 @@
     let clientsDisplayLimit = PAGE_SIZE_DEFAULT;
 
     const STORAGE_KEY_DISMISSED_ALERTS = 'kkachi_b2b_dismissed_alerts_v5';
+    const STORAGE_KEY_DELIVERY_SEQ = 'kkachi_b2b_delivery_seq_v5';
     let dismissedAlerts = JSON.parse(localStorage.getItem(STORAGE_KEY_DISMISSED_ALERTS)) || {};
     let leadStarFilterOnly = false;
     let expandedClientNames = new Set();
     let currentTrackingModalOrderId = null;
+
+    // 띄어쓰기 다중 키워드 부분 일치 검색 헬퍼 (AND 토큰 검색: '감자 암사' -> '감자마켓 암사역점' 매칭)
+    function matchSearchTokens(targetText, queryStr) {
+      if (!queryStr || !String(queryStr).trim()) return true;
+      const tokens = String(queryStr).toLowerCase().trim().split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return true;
+      const hay = String(targetText || '').toLowerCase();
+      return tokens.every(tok => hay.includes(tok));
+    }
 
     function showCopyToast(msg) {
       let toast = document.getElementById('kkachi-copy-toast');
@@ -1358,7 +1421,8 @@
         const digits = raw.replace(/[^0-9]/g, '');
         copySingleFieldInline(digits || raw, '사업자번호');
       } else if (field === 'clientname') {
-        copySingleFieldInline(order.clientName || '', '상호');
+        const officialTaxName = order.taxClientName || (matchedClient ? matchedClient.taxClientName : '') || order.clientName || '';
+        copySingleFieldInline(officialTaxName, '세무 상호(법인명)');
       } else if (field === 'ceoname') {
         const ceo = order.ceoName || (matchedClient ? (matchedClient.ceoName || matchedClient.name) : '') || '';
         copySingleFieldInline(ceo, '대표자명');
@@ -1381,6 +1445,108 @@
         }
         copySingleFieldInline(rep, '대표품목명');
       }
+    }
+
+    // 주문 상세 서랍에서 탭 이동 없이 해당 거래처 정보 수정 팝업 바로 열기
+    function openClientEditFromDrawer() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order || !order.clientName) return;
+      openClientEditModal(encodeURIComponent(order.clientName));
+    }
+
+    // 주문 상세 서랍 내 세무 정보 '인라인 수기 수정' 모드 전환
+    function toggleDrawerTaxEditMode(isEdit) {
+      const viewBox = document.getElementById('drawer-tax-view-mode');
+      const editBox = document.getElementById('drawer-tax-edit-mode');
+      const editBtn = document.getElementById('btn-drawer-tax-inline-edit');
+      if (!viewBox || !editBox) return;
+
+      if (isEdit) {
+        const order = orders.find(o => o.id === currentSelectedOrderId);
+        if (!order) return;
+        const matchedClient = clients.find(c => c.name.toLowerCase() === (order.clientName || '').toLowerCase());
+
+        document.getElementById('drawer-inline-biznum').value = order.bizNum || (matchedClient ? matchedClient.bizNum : '') || '';
+        document.getElementById('drawer-inline-taxname').value = order.taxClientName || (matchedClient ? matchedClient.taxClientName : '') || '';
+        document.getElementById('drawer-inline-ceoname').value = order.ceoName || (matchedClient ? matchedClient.ceoName : '') || '';
+        document.getElementById('drawer-inline-email').value = order.clientEmail || order.email || (matchedClient ? (matchedClient.email || matchedClient.clientEmail) : '') || '';
+        document.getElementById('drawer-inline-bizaddr').value = (matchedClient ? matchedClient.address : '') || '';
+
+        viewBox.classList.add('hidden');
+        editBox.classList.remove('hidden');
+        if (editBtn) editBtn.classList.add('hidden');
+      } else {
+        viewBox.classList.remove('hidden');
+        editBox.classList.add('hidden');
+        if (editBtn) editBtn.classList.remove('hidden');
+      }
+    }
+
+    // 주문 상세 서랍 내 세무 정보 인라인 저장 (현재 주문 + 동일 거래처 주문 + 거래처 마스터 DB 동시 영구 반영)
+    function saveDrawerTaxInline() {
+      const order = orders.find(o => o.id === currentSelectedOrderId);
+      if (!order) return;
+
+      const bizNum = (document.getElementById('drawer-inline-biznum')?.value || '').trim();
+      const taxClientName = (document.getElementById('drawer-inline-taxname')?.value || '').trim();
+      const ceoName = (document.getElementById('drawer-inline-ceoname')?.value || '').trim();
+      const email = (document.getElementById('drawer-inline-email')?.value || '').trim();
+      const bizAddr = (document.getElementById('drawer-inline-bizaddr')?.value || '').trim();
+
+      // 1) 현재 주문 및 동일 발주처의 주문들 세무 정보 즉시 동기화
+      orders.forEach(o => {
+        if (o.clientName && o.clientName.trim().toLowerCase() === order.clientName.trim().toLowerCase()) {
+          if (bizNum) o.bizNum = bizNum;
+          o.taxClientName = taxClientName;
+          if (ceoName) o.ceoName = ceoName;
+          if (email) {
+            o.email = email;
+            o.clientEmail = email;
+          }
+        }
+      });
+
+      if (!order.auditLogs) order.auditLogs = [];
+      order.auditLogs.push(`[${new Date().toISOString().slice(0, 16).replace('T', ' ')}] 서랍 세무정보 직접수정 (사업자: ${bizNum || '-'}, 세무상호: ${taxClientName || order.clientName}, 대표: ${ceoName || '-'})`);
+
+      // 2) 거래처 마스터 DB(clients)에도 영구 반영 및 시트 동기화
+      let client = clients.find(c => c.name.trim().toLowerCase() === order.clientName.trim().toLowerCase());
+      if (!client) {
+        client = {
+          id: `CLT-${Date.now().toString().slice(-5)}`,
+          name: order.clientName,
+          taxClientName: taxClientName,
+          clientType: order.clientType || '직거래',
+          bizNum: bizNum,
+          ceoName: ceoName,
+          email: email,
+          isTaxExempt: Boolean(order.isTaxExempt),
+          receiverName: order.receiverName || order.clientName,
+          receiverPhone: order.receiverPhone || '',
+          receiverAddress: order.receiverAddress || '',
+          address: bizAddr || order.receiverAddress || '',
+          contacts: [],
+          memo: ''
+        };
+        clients.push(client);
+      } else {
+        if (bizNum) client.bizNum = bizNum;
+        client.taxClientName = taxClientName;
+        if (ceoName) client.ceoName = ceoName;
+        if (email) client.email = email;
+        if (bizAddr) client.address = bizAddr;
+      }
+
+      localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
+      saveOrdersData();
+      syncClientToGoogleSheet(client);
+      syncOrderToGoogleSheet(order, 'tax');
+
+      renderOrdersTable();
+      renderClientsList();
+      renderTaxTable();
+      openOrderDrawer(order.id);
+      showCopyToast('✓ 세무 정보가 주문과 거래처 DB에 동시 저장되었습니다!');
     }
 
     function toggleDrawerItemTaxTable() {
@@ -1495,8 +1661,8 @@
       const reconstructed = [];
       const summary = o.itemsSummary || '';
       MASTER_PRODUCTS.forEach(mp => {
-        const escaped = mp.name.replace(/[()]/g, '\$&');
-        const reg = new RegExp(`${escaped}\s*[×x]?\s*([0-9]+)\s*개`, 'i');
+        const escaped = mp.name.replace(/[()]/g, '\\$&');
+        const reg = new RegExp(`${escaped}\\s*[×x]?\\s*([0-9]+)\\s*개`, 'i');
         const m = summary.match(reg);
         if (m) {
           reconstructed.push({
@@ -1678,7 +1844,6 @@
       if (tabId === 'analytics') refreshAnalytics();
       if (tabId === 'tax') renderTaxTable();
     }
-
     // ==========================================
     // [관심 고객 (Leads) 관리 기능]
     // ==========================================
@@ -2035,9 +2200,9 @@
       if (!dropdown) return;
       const vendorName = document.getElementById('order-client-name').value.trim();
       const allDests = getVendorDestinationsList(vendorName);
-      const q = (query || '').trim().toLowerCase();
+      const q = (query || '').trim();
       const matches = q
-        ? allDests.filter(d => d.name.toLowerCase().includes(q) || d.address.toLowerCase().includes(q) || d.phone.includes(q))
+        ? allDests.filter(d => matchSearchTokens(`${d.name} ${d.receiverName || ''} ${d.address || ''} ${d.phone || ''} ${d.vendorName || ''}`, q))
         : allDests.slice(0, 8);
 
       if (matches.length === 0) {
@@ -2438,7 +2603,6 @@
       currentOrderItems.splice(idx, 1);
       renderActiveProductRows();
     }
-
     function parseRawOrderText() {
       if (isCurrentOrderSaved) {
         alert("이미 저장이 완료된 주문입니다. 새로운 주문을 작성하시려면 상단의 [↻ 새 주문 작성 (초기화)] 버튼을 눌러주세요.");
@@ -2505,7 +2669,7 @@
           const sortedAliases = [...prod.aliases].sort((a, b) => b.length - a.length);
           for (const alias of sortedAliases) {
             const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const reg = new RegExp(`${escapedAlias}(?:\\s*[0-9]+(?:ml|mL|g|kg))?[\\s:>\-×xX*]*([0-9]+)[\\s]*(박스|카톤|box|ctn|개|병|통|세트|팩|봉)?`, 'i');
+            const reg = new RegExp(`${escapedAlias}(?:\\s*[0-9]+(?:ml|mL|g|kg))?[\\s:>-×xX*]*([0-9]+)[\\s]*(박스|카톤|box|ctn|개|병|통|세트|팩|봉)?`, 'i');
             const m = textBlock.match(reg);
             if (m) {
               let qty = parseInt(m[1], 10) || 1;
@@ -2628,7 +2792,7 @@
           // 품목 표현 제거
           MASTER_PRODUCTS.forEach(mp => {
             mp.aliases.forEach(al => {
-              const r = new RegExp(`${al.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s:>\-×xX*]*[0-9]+[\\s]*(?:박스|카톤|개|병|통|세트)?`, 'gi');
+              const r = new RegExp(`${al.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s:>-×xX*]*[0-9]+[\\s]*(?:박스|카톤|개|병|통|세트)?`, 'gi');
               lineNoPhone = lineNoPhone.replace(r, ' ').trim();
             });
           });
@@ -2744,13 +2908,16 @@
         return;
       }
 
-      const matches = clients.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+      const matches = clients.filter(c => matchSearchTokens(`${c.name} ${c.taxClientName || ''} ${c.ceoName || ''} ${c.receiverName || ''} ${c.receiverAddress || ''}`, val));
       if (matches.length > 0) {
         dropdown.innerHTML = matches.map(c => `
           <div onclick="selectClient('${c.id}')" class="p-2 hover:bg-slate-100 cursor-pointer border-b border-slate-50 last:border-0 text-xs">
-            <div class="font-bold text-slate-800 flex items-center justify-between">
-              <span>${c.name}</span>
-              <span class="text-[9px] ${c.clientType === '벤더' ? 'bg-purple-100 text-purple-700' : c.clientType === '벤더 납품처' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'} px-1.5 py-0.5 rounded">${c.clientType === '벤더 납품처' ? '벤더 납품처 🔒' : (c.clientType || '직거래')}</span>
+            <div class="font-bold text-slate-800 flex items-center justify-between gap-1">
+              <div class="truncate">
+                <span>${c.name}</span>
+                ${c.taxClientName && c.taxClientName !== c.name ? `<span class="text-[10px] text-blue-600 font-semibold ml-1">(세무: ${c.taxClientName})</span>` : ''}
+              </div>
+              <span class="text-[9px] shrink-0 ${c.clientType === '벤더' ? 'bg-purple-100 text-purple-700' : c.clientType === '벤더 납품처' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'} px-1.5 py-0.5 rounded">${c.clientType === '벤더 납품처' ? '벤더 납품처 🔒' : (c.clientType || '직거래')}</span>
             </div>
             <div class="text-[10px] text-slate-400 truncate">${c.receiverAddress || '기본 주소 없음'}</div>
           </div>
@@ -2776,6 +2943,8 @@
     function applyClientData(client) {
       activeClientObj = client;
       document.getElementById('order-client-name').value = client.name;
+      const taxNameInp = document.getElementById('order-tax-client-name');
+      if (taxNameInp) taxNameInp.value = client.taxClientName || '';
       document.getElementById('order-biz-num').value = client.bizNum || '';
       document.getElementById('order-client-email').value = client.email || client.clientEmail || '';
       const ceoInput = document.getElementById('order-ceo-name');
@@ -3048,6 +3217,7 @@
 
     function saveNewOrder() {
       const clientName = document.getElementById('order-client-name').value.trim();
+      const taxClientName = (document.getElementById('order-tax-client-name')?.value || '').trim();
       const receiverName = document.getElementById('order-receiver-name').value.trim() || clientName;
       const receiverPhone = document.getElementById('order-receiver-phone').value.trim();
       const receiverAddress = document.getElementById('order-receiver-address').value.trim();
@@ -3115,6 +3285,7 @@
         id: orderId,
         date: dateStr,
         clientName,
+        taxClientName,
         ceoName,
         bizNum,
         email: clientEmail,
@@ -3220,6 +3391,8 @@
       isCurrentOrderSaved = false;
       document.getElementById('raw-order-text').value = '';
       document.getElementById('order-client-name').value = '';
+      const taxClientInp = document.getElementById('order-tax-client-name');
+      if (taxClientInp) taxClientInp.value = '';
       document.getElementById('order-biz-num').value = '';
       const ceoInp = document.getElementById('order-ceo-name');
       if (ceoInp) ceoInp.value = '';
@@ -3373,7 +3546,6 @@
         el.className = 'toss-btn text-[10px] md:text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium flex items-center gap-1';
       }
     }
-
     // 포장 박스 계산 알고리즘 (사장님 확정 기준):
     // 1. 수입산 350세트(10입 상호혼합), 국산 180세트(8입 단독) 격리
     // 2. 단품 완박스 우선 추출 (생강청 20, 육수 20, 기름류 24)
@@ -3594,7 +3766,17 @@
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const dd = String(now.getDate()).padStart(2, '0');
       const todayPrefix = `${yy}${mm}${dd}`;
-      let seqCounter = 1;
+
+      // 이지어드민 중복 에러 방지를 위한 당일 일련번호 누적 기억 장치 (001~008 다운로드 후 재다운로드 시 009~016 발급)
+      let seqRecord = { date: todayPrefix, lastSeq: 0 };
+      try {
+        const savedSeq = JSON.parse(localStorage.getItem(STORAGE_KEY_DELIVERY_SEQ) || 'null');
+        if (savedSeq && savedSeq.date === todayPrefix && typeof savedSeq.lastSeq === 'number') {
+          seqRecord = savedSeq;
+        }
+      } catch (e) {}
+      let seqCounter = seqRecord.lastSeq + 1;
+      const startSeqNum = seqCounter;
 
       let exportRows = [];
       targets.forEach(o => {
@@ -3629,6 +3811,13 @@
         return alert("엑셀로 변환할 품목 데이터가 없습니다.");
       }
 
+      // 마지막 발급된 일련번호를 localStorage에 누적 저장 (다음 다운로드 시 이어서 발급)
+      const endSeqNum = seqCounter - 1;
+      localStorage.setItem(STORAGE_KEY_DELIVERY_SEQ, JSON.stringify({
+        date: todayPrefix,
+        lastSeq: endSeqNum
+      }));
+
       saveOrdersData(false);
 
       try {
@@ -3657,7 +3846,7 @@
           }
         }
 
-        showCopyToast(`✓ 택배 엑셀 (${exportRows.length}박스 / ${targets.length}건) 다운로드 완료!`);
+        showCopyToast(`✓ 택배 엑셀 (${todayPrefix}-${String(startSeqNum).padStart(3, '0')} ~ ${String(endSeqNum).padStart(3, '0')} / 총 ${exportRows.length}박스) 다운로드 완료!`);
       } catch (err) {
         console.error("Delivery excel export error:", err);
         alert("엑셀 파일 다운로드 중 오류가 발생했습니다: " + (err.message || err));
@@ -3827,7 +4016,6 @@
         </div>
       `).join('') + `</div>`;
     }
-
     function renderOrdersTable() {
       const search = (document.getElementById('order-search-input')?.value || '').toLowerCase();
       const pageBox = document.getElementById('orders-pagination-box');
@@ -3854,14 +4042,23 @@
         if (listFilter === 'unpaid' && (o.paymentStatus === 'paid' || o.status === '주문취소')) return false;
         if (listFilter === 'tax-unissued' && (o.taxInvoiceStatus === 'issued' || o.status === '주문취소')) return false;
         if (search) {
-          return (o.clientName && o.clientName.toLowerCase().includes(search)) ||
-                 (o.receiverName && o.receiverName.toLowerCase().includes(search)) ||
-                 (o.receiverAddress && o.receiverAddress.toLowerCase().includes(search)) ||
-                 (o.receiverPhone && o.receiverPhone.includes(search)) ||
-                 (o.itemsSummary && o.itemsSummary.toLowerCase().includes(search)) ||
-                 (o.memo && o.memo.toLowerCase().includes(search)) ||
-                 (o.internalMemo && o.internalMemo.toLowerCase().includes(search)) ||
-                 (o.trackingNo && o.trackingNo.includes(search));
+          const matchedClient = clients.find(c => c.name.toLowerCase() === (o.clientName || '').toLowerCase());
+          const taxName = o.taxClientName || (matchedClient ? matchedClient.taxClientName : '') || '';
+          const combinedOrderText = [
+            o.id,
+            o.clientName,
+            taxName,
+            o.ceoName,
+            o.bizNum,
+            o.receiverName,
+            o.receiverAddress,
+            o.receiverPhone,
+            o.itemsSummary,
+            o.memo,
+            o.internalMemo,
+            o.trackingNo
+          ].filter(Boolean).join(' ');
+          return matchSearchTokens(combinedOrderText, search);
         }
         return true;
       });
@@ -4423,7 +4620,6 @@
       syncOrderToGoogleSheet(order, 'status');
       renderOrdersTable();
     }
-
     function openOrderDrawer(orderId) {
       currentSelectedOrderId = orderId;
       const order = orders.find(o => o.id === orderId);
@@ -4444,11 +4640,13 @@
       if (copyAddrEl) copyAddrEl.textContent = order.receiverAddress || '미등록';
 
       // 🧾 세금계산서 발행 정보 (홈택스 입력용) 자동 채우기
+      toggleDrawerTaxEditMode(false);
       const matchedClient = clients.find(c => c.name.toLowerCase() === (order.clientName || '').toLowerCase());
       const bizVal = order.bizNum || (matchedClient ? matchedClient.bizNum : '') || '미등록';
-      const nameVal = order.clientName || '미등록';
+      const officialTaxName = order.taxClientName || (matchedClient ? matchedClient.taxClientName : '') || '';
+      const nameVal = officialTaxName ? `${officialTaxName}${officialTaxName !== order.clientName ? ` (발주:${order.clientName})` : ''}` : (order.clientName || '미등록');
       const ceoVal = order.ceoName || (matchedClient ? (matchedClient.ceoName || matchedClient.name) : '') || '미등록';
-      const emailVal = order.clientEmail || (matchedClient ? (matchedClient.email || matchedClient.clientEmail) : '') || '미등록';
+      const emailVal = order.clientEmail || order.email || (matchedClient ? (matchedClient.email || matchedClient.clientEmail) : '') || '미등록';
       const supplyVal = `${Number(order.supplyPrice || 0).toLocaleString()}원`;
       const vatVal = `${Number(order.vat || 0).toLocaleString()}원`;
       const totalVal = `${Number(order.totalPrice || 0).toLocaleString()}원`;
@@ -4868,7 +5066,6 @@
       if (typeVal === '벤더 납품처') wrap.classList.remove('hidden');
       else wrap.classList.add('hidden');
     }
-
     function buildClientEntitiesMap() {
       const entityMap = new Map();
 
@@ -4890,9 +5087,17 @@
         if (cType === '벤더') badgeClass = 'bg-purple-50 text-purple-700 border border-purple-200';
         else if (cType === '벤더 납품처') badgeClass = 'bg-indigo-50 text-indigo-700 border border-indigo-200';
 
+        // 다중 담당자 목록 정규화 (기존 단일 contactName/contactPhone 호환)
+        let normContacts = Array.isArray(c.contacts) ? [...c.contacts] : [];
+        if (normContacts.length === 0 && (c.contactName || c.contactPhone)) {
+          normContacts.push({ role: '담당자', name: c.contactName || '', phone: c.contactPhone || '' });
+        }
+
         entityMap.set(c.name, {
           id: c.id,
           name: c.name,
+          taxClientName: c.taxClientName || '',
+          ceoName: c.ceoName || '',
           rawType: cType,
           vendorName: parsedVendor,
           type: cType === '벤더 납품처' && parsedVendor ? `납품처 (${parsedVendor})` : cType,
@@ -4902,6 +5107,10 @@
           email: c.email || '',
           phone: c.receiverPhone || '',
           address: c.receiverAddress || '',
+          bizAddress: c.address || '',
+          contacts: normContacts,
+          contactName: c.contactName || '',
+          contactPhone: c.contactPhone || '',
           memo: cleanMemo,
           isTaxExempt: Boolean(c.isTaxExempt),
           lastOrderDate: null,
@@ -5123,13 +5332,21 @@
             const mp = MASTER_PRODUCTS.find(p => p.id === pid);
             return mp ? mp.name.toLowerCase() : '';
           }).join(' ');
-          return e.name.toLowerCase().includes(search) || 
-                 (e.vendorName && e.vendorName.toLowerCase().includes(search)) ||
-                 (e.type && e.type.toLowerCase().includes(search)) ||
-                 (e.phone && e.phone.includes(search)) ||
-                 (e.address && e.address.toLowerCase().includes(search)) ||
-                 (e.memo && e.memo.toLowerCase().includes(search)) ||
-                 orderedProdNames.includes(search);
+          const contactsText = (e.contacts || []).map(ct => `${ct.role || ''} ${ct.name || ''} ${ct.phone || ''}`).join(' ');
+          const combinedClientText = [
+            e.name,
+            e.taxClientName,
+            e.ceoName,
+            e.bizNum,
+            e.vendorName,
+            e.type,
+            e.phone,
+            e.address,
+            e.memo,
+            contactsText,
+            orderedProdNames
+          ].filter(Boolean).join(' ');
+          return matchSearchTokens(combinedClientText, search);
         }
         return true;
       });
@@ -5179,6 +5396,7 @@
               <div class="flex justify-between items-start gap-2">
                 <div class="min-w-0">
                   <span class="font-extrabold text-sm text-slate-900">${e.name}</span>
+                  ${e.taxClientName && e.taxClientName !== e.name ? `<span class="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-bold ml-1">🧾 세무: ${e.taxClientName}</span>` : ''}
                   <span class="text-[10px] ${e.badgeClass} px-1.5 py-0.5 rounded font-bold ml-1">${e.type}</span>
                   ${e.isTaxExempt ? '<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold ml-0.5">면세</span>' : ''}
                 </div>
@@ -5187,9 +5405,14 @@
                 </div>
               </div>
               <div class="text-xs text-slate-600 flex items-center gap-3 flex-wrap">
-                <span class="font-mono text-[11px]">${e.phone || '연락처 미등록'}</span>
+                <span class="font-mono text-[11px]">📦 수령: ${e.phone || '연락처 미등록'}</span>
                 <span class="text-[11px] text-slate-400 truncate">${e.address || '주소 미등록'}</span>
               </div>
+              ${(e.contacts && e.contacts.length > 0) ? `
+                <div class="flex flex-wrap gap-1 pt-0.5">
+                  ${e.contacts.map(ct => `<span class="text-[10px] bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded font-semibold">👑 ${ct.role ? ct.role + ': ' : ''}${ct.name || ''} ${ct.phone ? `(${ct.phone})` : ''}</span>`).join('')}
+                </div>
+              ` : ''}
               <div class="flex flex-wrap gap-1 pt-0.5">${prodBadges}</div>
               ${e.memo ? `<div class="text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/60">📝 ${e.memo}</div>` : ''}
               <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
@@ -5238,11 +5461,17 @@
                   <span class="font-extrabold text-sm text-slate-900">${e.name}</span>
                   ${e.isTaxExempt ? `<span class="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-bold">면세</span>` : ""}
                 </div>
-                ${e.bizNum && !e.bizNum.startsWith("🔒") ? `<div class="text-[10px] text-slate-400 font-mono mt-0.5">${e.bizNum}</div>` : ""}
+                ${e.taxClientName && e.taxClientName !== e.name ? `<div class="text-[10px] text-blue-700 font-bold mt-0.5">🧾 세무상호: ${e.taxClientName}</div>` : ""}
+                ${e.bizNum && !e.bizNum.startsWith("🔒") ? `<div class="text-[10px] text-slate-400 font-mono mt-0.5">${e.bizNum}${e.ceoName ? ` · 대표: ${e.ceoName}` : ''}</div>` : ""}
               </td>
               <td class="py-3.5 px-4 align-top max-w-[340px]">
                 <div class="font-mono text-xs font-semibold text-slate-800">${e.phone || "-"}</div>
                 <div class="text-[11px] text-slate-500 truncate mt-0.5" title="${e.address || ""}">${e.address || "주소 미등록"}</div>
+                ${(e.contacts && e.contacts.length > 0) ? `
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    ${e.contacts.map(ct => `<span class="text-[10px] bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.2 rounded font-semibold">👑 ${ct.role ? ct.role + ': ' : ''}${ct.name || ''} ${ct.phone ? `(${ct.phone})` : ''}</span>`).join('')}
+                  </div>
+                ` : ''}
                 ${e.memo ? `<div class="text-[11px] text-slate-600 bg-slate-100 border border-slate-200/90 px-2 py-0.5 rounded-md mt-1 truncate max-w-[320px]" title="${e.memo}">📝 ${e.memo}</div>` : ""}
               </td>
               <td class="py-3.5 px-4 align-top">
@@ -5303,6 +5532,45 @@
         }
       }
     }
+    // 거래처 팝업 다중 소통 담당자 행 추가/삭제 헬퍼
+    function addClientContactRow(role = '', name = '', phone = '') {
+      const listEl = document.getElementById('edit-client-contacts-list');
+      if (!listEl) return;
+      const row = document.createElement('div');
+      row.className = 'grid grid-cols-12 gap-1.5 items-center client-contact-row';
+      const safeRole = String(role || '').replace(/"/g, '&quot;');
+      const safeName = String(name || '').replace(/"/g, '&quot;');
+      const safePhone = String(phone || '').replace(/"/g, '&quot;');
+      row.innerHTML = `
+        <input type="text" value="${safeRole}" placeholder="직책(대표/MD/발주)" class="contact-role-inp col-span-4 p-1.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-amber-500">
+        <input type="text" value="${safeName}" placeholder="성함" class="contact-name-inp col-span-3 p-1.5 border border-slate-200 rounded-lg text-xs font-bold bg-white outline-none focus:ring-1 focus:ring-amber-500">
+        <input type="text" value="${safePhone}" oninput="formatPhoneInput(this)" placeholder="010-0000-0000" class="contact-phone-inp col-span-4 p-1.5 border border-slate-200 rounded-lg text-xs font-mono bg-white outline-none focus:ring-1 focus:ring-amber-500">
+        <button type="button" onclick="removeClientContactRow(this)" class="col-span-1 text-slate-400 hover:text-rose-500 font-bold text-xs py-1 text-center" title="삭제">✕</button>
+      `;
+      listEl.appendChild(row);
+    }
+
+    function removeClientContactRow(btn) {
+      const listEl = document.getElementById('edit-client-contacts-list');
+      if (!listEl) return;
+      const rows = listEl.querySelectorAll('.client-contact-row');
+      if (rows.length <= 1) {
+        rows[0].querySelectorAll('input').forEach(inp => inp.value = '');
+        return;
+      }
+      btn.closest('.client-contact-row').remove();
+    }
+
+    function renderClientContactRowsInModal(contactsArr) {
+      const listEl = document.getElementById('edit-client-contacts-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (!contactsArr || contactsArr.length === 0) {
+        addClientContactRow('', '', '');
+      } else {
+        contactsArr.forEach(ct => addClientContactRow(ct.role || '', ct.name || '', ct.phone || ''));
+      }
+    }
 
     function openClientEditModal(clientKeyOrId) {
       document.getElementById('ocr-status-text').classList.add('hidden');
@@ -5324,6 +5592,8 @@
           c = {
             id: entity.id,
             name: entity.name,
+            taxClientName: entity.taxClientName || '',
+            ceoName: entity.ceoName || '',
             clientType: entity.rawType || '직거래',
             vendorName: entity.vendorName || '',
             bizNum: entity.bizNum.startsWith('🔒') ? '' : entity.bizNum,
@@ -5332,14 +5602,17 @@
             receiverName: entity.name,
             receiverPhone: entity.phone || '',
             receiverAddress: entity.address || '',
+            contacts: entity.contacts || [],
             memo: entity.memo || ''
           };
         }
-        if (!c) c = { id: decodedKey, name: '', clientType: '직거래', vendorName: '', bizNum: '', email: '', isTaxExempt: false, receiverName: '', receiverPhone: '', receiverAddress: '', memo: '' };
+        if (!c) c = { id: decodedKey, name: decodedKey, taxClientName: '', ceoName: '', clientType: '직거래', vendorName: '', bizNum: '', email: '', isTaxExempt: false, receiverName: decodedKey, receiverPhone: '', receiverAddress: '', contacts: [], memo: '' };
 
         document.getElementById('client-modal-title').textContent = `[${c.name || '거래처'}] 기본 정보 수정`;
         document.getElementById('edit-client-id').value = c.id;
         document.getElementById('edit-client-name').value = c.name;
+        const taxNameModalInp = document.getElementById('edit-client-tax-name');
+        if (taxNameModalInp) taxNameModalInp.value = c.taxClientName || (entity ? entity.taxClientName : '') || '';
         document.getElementById('edit-client-type').value = c.clientType || '직거래';
         toggleEditClientVendorField(c.clientType || '직거래');
         document.getElementById('edit-client-vendor-name').value = c.vendorName || (entity ? entity.vendorName : '') || '';
@@ -5348,10 +5621,14 @@
         if (ceoModalInp) ceoModalInp.value = c.ceoName || (entity ? entity.ceoName : '') || '';
         document.getElementById('edit-client-email').value = c.email || '';
         document.getElementById('edit-client-tax-exempt').value = c.isTaxExempt ? "true" : "false";
-        const contactNameInp = document.getElementById('edit-client-contact-name');
-        const contactPhoneInp = document.getElementById('edit-client-contact-phone');
-        if (contactNameInp) contactNameInp.value = c.contactName || (entity ? entity.contactName : '') || '';
-        if (contactPhoneInp) contactPhoneInp.value = c.contactPhone || (entity ? entity.contactPhone : '') || '';
+
+        // 다중 담당자 렌더링 (기존 단일 필드 호환)
+        let initContacts = Array.isArray(c.contacts) && c.contacts.length > 0 ? c.contacts : [];
+        if (initContacts.length === 0 && (c.contactName || c.contactPhone)) {
+          initContacts = [{ role: '담당자', name: c.contactName || '', phone: c.contactPhone || '' }];
+        }
+        renderClientContactRowsInModal(initContacts);
+
         document.getElementById('edit-client-receiver-name').value = c.receiverName || c.name || '';
         document.getElementById('edit-client-phone').value = c.receiverPhone || '';
         const recAddrInp = document.getElementById('edit-client-receiver-address');
@@ -5373,6 +5650,8 @@
         document.getElementById('client-modal-title').textContent = "신규 거래처 등록";
         document.getElementById('edit-client-id').value = "";
         document.getElementById('edit-client-name').value = "";
+        const taxNameModalInp2 = document.getElementById('edit-client-tax-name');
+        if (taxNameModalInp2) taxNameModalInp2.value = "";
         document.getElementById('edit-client-type').value = "직거래";
         toggleEditClientVendorField('직거래');
         document.getElementById('edit-client-vendor-name').value = "";
@@ -5381,10 +5660,7 @@
         document.getElementById('edit-client-tax-exempt').value = "false";
         const ceoModalInp2 = document.getElementById('edit-client-ceo-name');
         if (ceoModalInp2) ceoModalInp2.value = "";
-        const contactNameInp2 = document.getElementById('edit-client-contact-name');
-        const contactPhoneInp2 = document.getElementById('edit-client-contact-phone');
-        if (contactNameInp2) contactNameInp2.value = "";
-        if (contactPhoneInp2) contactPhoneInp2.value = "";
+        renderClientContactRowsInModal([]);
         document.getElementById('edit-client-receiver-name').value = "";
         document.getElementById('edit-client-phone').value = "";
         const recAddrInp2 = document.getElementById('edit-client-receiver-address');
@@ -5421,7 +5697,14 @@
 
         const nameMatch = text.match(/(?:상\s*호|법인명\(단체명\)|단체명)[\s:>]+([가-힣a-zA-Z0-9\(\)]+)/);
         if (nameMatch && nameMatch[1]) {
-          document.getElementById('edit-client-name').value = nameMatch[1].trim();
+          const extractedTaxName = nameMatch[1].trim();
+          const curClientName = document.getElementById('edit-client-name').value.trim();
+          const taxNameEl = document.getElementById('edit-client-tax-name');
+          if (!curClientName) {
+            document.getElementById('edit-client-name').value = extractedTaxName;
+          } else if (taxNameEl && curClientName !== extractedTaxName) {
+            taxNameEl.value = extractedTaxName;
+          }
         }
 
         const repMatch = text.match(/(?:대\s*표\s*자|성\s*명)[\s:>]+([가-힣]{2,4})/);
@@ -5442,14 +5725,27 @@
     function saveClientFromModal() {
       const id = document.getElementById('edit-client-id').value;
       const name = document.getElementById('edit-client-name').value.trim();
+      const taxClientName = (document.getElementById('edit-client-tax-name')?.value || '').trim();
       const clientType = document.getElementById('edit-client-type').value;
       const vendorName = (document.getElementById('edit-client-vendor-name')?.value || '').trim();
       const bizNum = document.getElementById('edit-client-biznum').value.trim();
       const ceoName = (document.getElementById('edit-client-ceo-name')?.value || '').trim();
       const email = document.getElementById('edit-client-email').value.trim();
       const isTaxExempt = document.getElementById('edit-client-tax-exempt').value === "true";
-      const contactName = (document.getElementById('edit-client-contact-name')?.value || '').trim();
-      const contactPhone = (document.getElementById('edit-client-contact-phone')?.value || '').trim();
+
+      // 다중 담당자 수집
+      const contacts = [];
+      document.querySelectorAll('#edit-client-contacts-list .client-contact-row').forEach(r => {
+        const role = (r.querySelector('.contact-role-inp')?.value || '').trim();
+        const cName = (r.querySelector('.contact-name-inp')?.value || '').trim();
+        const cPhone = (r.querySelector('.contact-phone-inp')?.value || '').trim();
+        if (role || cName || cPhone) {
+          contacts.push({ role, name: cName, phone: cPhone });
+        }
+      });
+      const contactName = contacts.length > 0 ? `${contacts[0].role ? contacts[0].role + ' ' : ''}${contacts[0].name}`.trim() : '';
+      const contactPhone = contacts.length > 0 ? (contacts[0].phone || '') : '';
+
       const receiverName = document.getElementById('edit-client-receiver-name').value.trim();
       const receiverPhone = document.getElementById('edit-client-phone').value.trim();
       const receiverAddress = (document.getElementById('edit-client-receiver-address')?.value || '').trim();
@@ -5461,12 +5757,14 @@
       let targetClient = clients.find(c => (id && !id.startsWith('DEST-') && !id.startsWith('AUTO-') && c.id === id) || c.name.toLowerCase() === name.toLowerCase());
       if (targetClient) {
         targetClient.name = name;
+        targetClient.taxClientName = taxClientName;
         targetClient.clientType = clientType;
         targetClient.vendorName = clientType === '벤더 납품처' ? vendorName : '';
         targetClient.bizNum = bizNum;
         targetClient.ceoName = ceoName;
         targetClient.email = email;
         targetClient.isTaxExempt = isTaxExempt;
+        targetClient.contacts = contacts;
         targetClient.contactName = contactName;
         targetClient.contactPhone = contactPhone;
         targetClient.receiverName = receiverName;
@@ -5478,12 +5776,14 @@
         targetClient = {
           id: `CLT-${Date.now().toString().slice(-5)}`,
           name: name,
+          taxClientName: taxClientName,
           clientType: clientType,
           vendorName: clientType === '벤더 납품처' ? vendorName : '',
           bizNum: bizNum,
           ceoName: ceoName,
           email: email,
           isTaxExempt: isTaxExempt,
+          contacts: contacts,
           contactName: contactName,
           contactPhone: contactPhone,
           receiverName: receiverName,
@@ -5495,11 +5795,32 @@
         clients.push(targetClient);
       }
 
+      // 해당 거래처의 기존 주문서에도 세무 정보(사업자번호, 세무상호, 대표자명, 이메일) 즉시 연동
+      orders.forEach(o => {
+        if (o.clientName && o.clientName.trim().toLowerCase() === name.toLowerCase()) {
+          if (bizNum) o.bizNum = bizNum;
+          o.taxClientName = taxClientName;
+          if (ceoName) o.ceoName = ceoName;
+          if (email) {
+            o.email = email;
+            o.clientEmail = email;
+          }
+        }
+      });
+
       localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
+      saveOrdersData();
       syncClientToGoogleSheet(targetClient);
       renderClientsList();
+      renderOrdersTable();
+      renderTaxTable();
       closeClientEditModal();
-      alert("거래처 정보가 저장되었습니다.");
+
+      // 만약 주문 상세 서랍이 열려 있는 상태에서 수정했다면 서랍 화면도 그 자리에서 즉시 갱신!
+      if (currentSelectedOrderId) {
+        openOrderDrawer(currentSelectedOrderId);
+      }
+      showCopyToast("✓ 거래처 정보 및 주문 세무 정보가 저장되었습니다!");
     }
 
     function openEditOrderModal() {
@@ -5730,11 +6051,14 @@
       const clientMap = new Map();
 
       validOrders.forEach(o => {
+        const matchedClient = clients.find(c => c.name.toLowerCase() === (o.clientName || '').toLowerCase());
+        const officialTaxName = o.taxClientName || (matchedClient ? matchedClient.taxClientName : '') || o.clientName;
+        const displayTaxName = (officialTaxName && officialTaxName !== o.clientName) ? `${officialTaxName} (발주: ${o.clientName})` : o.clientName;
         const key = `${o.clientName}_${o.isTaxExempt ? '면세' : '과세'}`;
         if (!clientMap.has(key)) {
           clientMap.set(key, {
-            name: o.clientName,
-            bizNum: o.bizNum || '-',
+            name: displayTaxName,
+            bizNum: o.bizNum || (matchedClient ? matchedClient.bizNum : '') || '-',
             isExempt: o.isTaxExempt,
             supply: 0,
             vat: 0,
@@ -5775,9 +6099,10 @@
       validOrders.forEach(o => {
         const client = clients.find(c => c.name.toLowerCase() === (o.clientName || '').toLowerCase());
         const ceoName = o.ceoName || (client ? client.ceoName : '') || o.receiverName || o.clientName;
+        const officialTaxName = o.taxClientName || (client ? client.taxClientName : '') || o.clientName;
         rows.push({
           "공급받는자 사업자등록번호": o.bizNum || (client ? client.bizNum : '') || "",
-          "공급받는자 상호": o.clientName,
+          "공급받는자 상호": officialTaxName,
           "공급받는자 성명": ceoName,
           "공급받는자 이메일": o.clientEmail || (client ? (client.email || client.clientEmail) : '') || "",
           "작성일자": o.date ? o.date.slice(0, 10).replace(/-/g, '') : '',
